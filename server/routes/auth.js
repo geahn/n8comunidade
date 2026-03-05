@@ -73,5 +73,33 @@ router.post('/login', async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
+const auth = require('../middleware/auth');
+
+// Impersonate
+router.post('/impersonate', auth, async (req, res) => {
+    if (req.user.role !== 'superadmin') {
+        return res.status(403).json({ message: 'Forbidden: Superadmin access required.' });
+    }
+
+    const { target_user_id } = req.body;
+    try {
+        const result = await db.query(
+            'SELECT u.id, u.email, u.full_name, u.role, u.neighborhood_id, n.name as neighborhood_name ' +
+            'FROM users u LEFT JOIN neighborhoods n ON u.neighborhood_id = n.id ' +
+            'WHERE u.id = $1',
+            [target_user_id]
+        );
+
+        if (result.rows.length === 0) return res.status(404).json({ message: 'User not found' });
+
+        const user = result.rows[0];
+        const token = jwt.sign({ id: user.id, role: user.role, neighborhood_id: user.neighborhood_id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+        res.json({ user, token });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
 
 module.exports = router;

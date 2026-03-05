@@ -23,6 +23,7 @@ const adRoutes = require('./routes/ads');
 const newsRoutes = require('./routes/news');
 const contactsRoutes = require('./routes/contacts');
 const adminRoutes = require('./routes/admin');
+const ordersRoutes = require('./routes/orders');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/neighborhoods', neighborhoodRoutes);
@@ -32,6 +33,7 @@ app.use('/api/ads', adRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/contacts', contactsRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/orders', ordersRoutes);
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
