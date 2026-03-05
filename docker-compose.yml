@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-00770425143}
+      POSTGRES_DB: ${DB_NAME:-n8comunidade}
+    ports:
+      - "2391:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  server:
+    build:
+      context: ./server
+    restart: always
+    environment:
+      DB_HOST: db
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-00770425143}
+      DB_NAME: ${DB_NAME:-n8comunidade}
+      DB_PORT: 5432
+      JWT_SECRET: ${JWT_SECRET:-supersecretneighborhoodkey123}
+      PORT: 3333
+    depends_on:
+      - db
+    ports:
+      - "3333:3333"
+
+  client:
+    build:
+      context: ./client
+    restart: always
+    environment:
+      REACT_APP_API_URL: http://server:3333
+    ports:
+      - "80:80"
+
+volumes:
+  postgres_data:
