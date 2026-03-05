@@ -8,6 +8,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+    next();
+});
 app.use(express.json());
 
 // Serve static files from the client/dist directory

@@ -52,17 +52,27 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     try {
+        console.log(`Login attempt for email: ${email}`);
         const result = await db.query(
             'SELECT u.id, u.email, u.password_hash, u.full_name, u.role, u.neighborhood_id, n.name as neighborhood_name ' +
             'FROM users u LEFT JOIN neighborhoods n ON u.neighborhood_id = n.id ' +
             'WHERE u.email = $1',
             [email]
         );
-        if (result.rows.length === 0) return res.status(400).json({ message: 'Invalid credentials' });
+        console.log(`User query result rows: ${result.rows.length}`);
+        if (result.rows.length === 0) {
+            console.log('Login failed: User not found');
+            return res.status(400).json({ message: 'Invalid credentials' });
+        }
 
         const user = result.rows[0];
+        console.log(`Comparing password for user: ${user.email}`);
         const isMatch = await bcrypt.compare(password, user.password_hash);
-        if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+        console.log(`Password match result: ${isMatch}`);
+        if (!isMatch) {
+            console.log('Login failed: Invalid password');
+            return res.status(400).json({ message: 'Invalid credentials' });
+        }
 
         const token = jwt.sign({ id: user.id, role: user.role, neighborhood_id: user.neighborhood_id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 

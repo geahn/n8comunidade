@@ -10,6 +10,14 @@ const pool = new Pool({
   ssl: false // User specified sslmode=disable
 });
 
+pool.query('SELECT NOW()', (err, res) => {
+  if (err) {
+    console.error('DATABASE CONNECTION ERROR:', err);
+  } else {
+    console.log('DATABASE CONNECTED SUCCESSFULLY');
+  }
+});
+
 module.exports = {
   query: (text, params) => pool.query(text, params),
   pool

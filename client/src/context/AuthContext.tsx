@@ -18,12 +18,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const login = async (email: string, password: string) => {
         try {
+            console.log(`Attempting login at: ${API_URL}/api/auth/login`);
             const response = await axios.post(`${API_URL}/api/auth/login`, { email, password });
+            console.log('Login successful:', response.data.user.email);
             setUser(response.data.user);
             setToken(response.data.token);
             return { success: true };
         } catch (error: any) {
-            return { success: false, message: error.response?.data?.message || 'Erro ao fazer login' };
+            console.error('Login error:', error.message);
+            if (error.response) {
+                console.error('Response data:', error.response.data);
+            }
+            return { success: false, message: error.response?.data?.message || 'Erro ao fazer login. Verifique sua conexão.' };
         }
     };
 
