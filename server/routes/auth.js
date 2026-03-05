@@ -29,7 +29,15 @@ router.post('/signup', [
             [email, passwordHash, full_name, neighborhood_id || null]
         );
 
-        const user = result.rows[0];
+        const userId = result.rows[0].id;
+        const finalResult = await db.query(
+            'SELECT u.id, u.email, u.full_name, u.role, u.neighborhood_id, n.name as neighborhood_name ' +
+            'FROM users u LEFT JOIN neighborhoods n ON u.neighborhood_id = n.id ' +
+            'WHERE u.id = $1',
+            [userId]
+        );
+
+        const user = finalResult.rows[0];
         const token = jwt.sign({ id: user.id, role: user.role, neighborhood_id: user.neighborhood_id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
         res.status(201).json({ user, token });
@@ -44,7 +52,12 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+        const result = await db.query(
+            'SELECT u.id, u.email, u.password_hash, u.full_name, u.role, u.neighborhood_id, n.name as neighborhood_name ' +
+            'FROM users u LEFT JOIN neighborhoods n ON u.neighborhood_id = n.id ' +
+            'WHERE u.email = $1',
+            [email]
+        );
         if (result.rows.length === 0) return res.status(400).json({ message: 'Invalid credentials' });
 
         const user = result.rows[0];

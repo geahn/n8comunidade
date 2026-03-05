@@ -17,9 +17,15 @@ app.get('/health', (req, res) => {
 // Import Routes
 const authRoutes = require('./routes/auth');
 const neighborhoodRoutes = require('./routes/neighborhoods');
+const dashboardRoutes = require('./routes/dashboard');
+const shopRoutes = require('./routes/shops');
+const adRoutes = require('./routes/ads');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/neighborhoods', neighborhoodRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/shops', shopRoutes);
+app.use('/api/ads', adRoutes);
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
