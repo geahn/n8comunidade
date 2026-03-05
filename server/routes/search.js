@@ -5,15 +5,15 @@ const auth = require('../middleware/auth');
 
 // Unified Search (Shops, News, Ads)
 router.get('/', auth, async (req, res) => {
-    const { neighborhood_id } = req.user;
     const { q } = req.query;
+    const neighborhood_id = req.query.neighborhoodId || req.user.neighborhood_id;
 
     if (!q) {
-        return res.json([]);
+        return res.status(400).json({ message: 'Query parameter q is required' });
     }
 
     if (!neighborhood_id) {
-        return res.status(400).json({ message: 'User not associated with a neighborhood' });
+        return res.status(400).json({ message: 'Neighborhood ID required' });
     }
 
     const searchTerm = `%${q}%`;
@@ -22,27 +22,18 @@ router.get('/', auth, async (req, res) => {
         const [shops, news, ads] = await Promise.all([
             // Search in Shops
             db.query(
-                `SELECT id, name as title, 'shop' as type, logo_url as image_url, rating 
-                 FROM shops 
-                 WHERE neighborhood_id = $1 AND status = 'active' AND (name ILIKE $2 OR description ILIKE $2) 
-                 LIMIT 5`,
-                [neighborhood_id, searchTerm]
+                'SELECT id, name as title, logo_url as image_url, rating, $1 as type FROM shops WHERE neighborhood_id = $3 AND (name ILIKE $2 OR description ILIKE $2) AND status = $4 LIMIT 5',
+                ['shop', searchTerm, neighborhood_id, 'active']
             ),
-            // Search in News
+            // News results
             db.query(
-                `SELECT id, title, 'news' as type, image_url, created_at 
-                 FROM news 
-                 WHERE neighborhood_id = $1 AND status = 'published' AND (title ILIKE $2 OR content ILIKE $2) 
-                 LIMIT 5`,
-                [neighborhood_id, searchTerm]
+                'SELECT id, title, image_url, $1 as type FROM news WHERE neighborhood_id = $3 AND (title ILIKE $2 OR content ILIKE $2) AND status = $4 LIMIT 5',
+                ['news', searchTerm, neighborhood_id, 'published']
             ),
-            // Search in Ads
+            // Ads results
             db.query(
-                `SELECT id, title, 'ad' as type, images[1] as image_url, price 
-                 FROM ads 
-                 WHERE neighborhood_id = $1 AND status = 'active' AND (title ILIKE $2 OR description ILIKE $2) 
-                 LIMIT 5`,
-                [neighborhood_id, searchTerm]
+                'SELECT id, title, price, images[1] as image_url, $1 as type FROM ads WHERE neighborhood_id = $3 AND (title ILIKE $2 OR description ILIKE $2) AND status = $4 LIMIT 5',
+                ['ad', searchTerm, neighborhood_id, 'active']
             )
         ]);
 

@@ -5,10 +5,10 @@ const auth = require('../middleware/auth');
 
 // Get Dashboard Data (News, Shops, Ads, Banners)
 router.get('/', auth, async (req, res) => {
-    const { neighborhood_id } = req.user;
+    const neighborhood_id = req.query.neighborhoodId || req.user.neighborhood_id;
 
     if (!neighborhood_id) {
-        return res.status(400).json({ message: 'User not associated with a neighborhood' });
+        return res.status(400).json({ message: 'Neighborhood ID required' });
     }
 
     try {

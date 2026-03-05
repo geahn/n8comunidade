@@ -40,12 +40,12 @@ const BANNER_WIDTH = width - 40;
 const BANNER_INTERVAL = 5000;
 
 export default function DashboardScreen({ navigation }: any) {
-    const { token, user }: any = useAuth();
+    const { token, user, selectedNeighborhood, setSelectedNeighborhood }: any = useAuth();
     const [data, setData] = useState<any>({ news: [], shops: [], ads: [], banners: [] });
     const [refreshing, setRefreshing] = useState(false);
     const [loading, setLoading] = useState(true);
     const [neighborhoodModal, setNeighborhoodModal] = useState(false);
-    const [currentNeighborhood, setCurrentNeighborhood] = useState(MOCK_NEIGHBORHOODS[0]);
+    const [neighborhoods, setNeighborhoods] = useState<any[]>([]);
     const [bannerIndex, setBannerIndex] = useState(0);
 
     // Search state
@@ -57,9 +57,22 @@ export default function DashboardScreen({ navigation }: any) {
     const scrollY = useRef(new Animated.Value(0)).current;
     const bannerScrollRef = useRef<ScrollView>(null);
 
+    useEffect(() => {
+        if (token) {
+            fetchNeighborhoods();
+        }
+    }, [token]);
+
+    useEffect(() => {
+        if (token && selectedNeighborhood?.id) {
+            fetchData();
+        }
+    }, [token, selectedNeighborhood]);
+
     const fetchData = async () => {
+        if (!selectedNeighborhood?.id) return;
         try {
-            const r = await axios.get(`${API_URL}/api/dashboard`, {
+            const r = await axios.get(`${API_URL}/api/dashboard?neighborhoodId=${selectedNeighborhood.id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setData(r.data);
@@ -71,16 +84,35 @@ export default function DashboardScreen({ navigation }: any) {
         }
     };
 
-    useEffect(() => {
-        if (token) fetchData();
-    }, [token]);
+    const fetchNeighborhoods = async () => {
+        try {
+            const r = await axios.get(`${API_URL}/api/neighborhoods`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setNeighborhoods(r.data);
+
+            // Set initial neighborhood from user or first available if none selected
+            if (!selectedNeighborhood) {
+                if (user?.neighborhood_id) {
+                    const found = r.data.find((n: any) => n.id === user.neighborhood_id);
+                    if (found) setSelectedNeighborhood(found);
+                    else if (r.data.length > 0) setSelectedNeighborhood(r.data[0]);
+                } else if (r.data.length > 0) {
+                    setSelectedNeighborhood(r.data[0]);
+                }
+            }
+        } catch (err) {
+            console.error('Fetch neighborhoods error:', err);
+        }
+    };
 
     const handleSearch = async (text: string) => {
         setSearchQuery(text);
         if (text.length > 2) {
             setIsSearching(true);
             try {
-                const r = await axios.get(`${API_URL}/api/search?q=${text}`, {
+                const nId = selectedNeighborhood?.id || user?.neighborhood_id;
+                const r = await axios.get(`${API_URL}/api/search?q=${text}&neighborhoodId=${nId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setSearchResults(r.data);
@@ -142,7 +174,9 @@ export default function DashboardScreen({ navigation }: any) {
                             <View>
                                 <Text style={styles.locationLabel}>Bairro atual</Text>
                                 <View style={styles.locationContainer}>
-                                    <Text style={styles.locationName}>{currentNeighborhood.name}</Text>
+                                    <View style={{ flexShrink: 1 }}>
+                                        <Text style={styles.locationName} numberOfLines={1}>{selectedNeighborhood?.name || 'Carregando...'}</Text>
+                                    </View>
                                     <ChevronDown size={14} color="#1e293b" />
                                 </View>
                             </View>
@@ -199,7 +233,7 @@ export default function DashboardScreen({ navigation }: any) {
                                         <View style={{ flex: 1, marginLeft: 12 }}>
                                             <View style={styles.searchResultHeader}>
                                                 <Text style={styles.searchResultTitle} numberOfLines={1}>{item.title}</Text>
-                                                <View style={[styles.badge, styles[`badge_${item.type}` as keyof typeof styles]]}>
+                                                <View style={[styles.badge, (styles as any)[`badge_${item.type}`]]}>
                                                     <Text style={styles.badgeText}>{item.type.toUpperCase()}</Text>
                                                 </View>
                                             </View>
@@ -351,16 +385,16 @@ export default function DashboardScreen({ navigation }: any) {
                         <View style={styles.modalDrag} />
                         <Text style={styles.modalTitle}>Explorar a vizinhança</Text>
                         <Text style={styles.modalSub}>Selecione um bairro para ver o que há de novo.</Text>
-                        {MOCK_NEIGHBORHOODS.map(n => (
-                            <TouchableOpacity key={n.id} onPress={() => { setCurrentNeighborhood(n); setNeighborhoodModal(false); onRefresh(); }} style={[styles.nItem, currentNeighborhood.id === n.id && styles.nItemActive]}>
-                                <View style={[styles.nIcon, currentNeighborhood.id === n.id && styles.nIconActive]}>
-                                    <MapPin size={20} color={currentNeighborhood.id === n.id ? 'white' : '#64748b'} />
+                        {neighborhoods.map(n => (
+                            <TouchableOpacity key={n.id} onPress={() => { setSelectedNeighborhood(n); setNeighborhoodModal(false); }} style={[styles.nItem, selectedNeighborhood?.id === n.id && styles.nItemActive]}>
+                                <View style={[styles.nIcon, selectedNeighborhood?.id === n.id && styles.nIconActive]}>
+                                    <MapPin size={20} color={selectedNeighborhood?.id === n.id ? 'white' : '#64748b'} />
                                 </View>
                                 <View style={{ flex: 1 }}>
                                     <Text style={styles.nName}>{n.name}</Text>
                                     <Text style={styles.nLoc}>{n.city}</Text>
                                 </View>
-                                {currentNeighborhood.id === n.id && <Check size={20} color="#1d4ed8" />}
+                                {selectedNeighborhood?.id === n.id && <Check size={20} color="#1d4ed8" />}
                             </TouchableOpacity>
                         ))}
                     </View>
@@ -565,6 +599,28 @@ const styles = StyleSheet.create({
         fontSize: 17, fontWeight: '800', color: '#1e293b',
     },
     nLoc: {
-        fontSize: 13, color: '#94a3b8', fontWeight: '500',
+        fontSize: 12, color: '#94a3b8',
+    },
+    newsCard: {
+        width: 260, backgroundColor: 'white', borderRadius: 20, marginRight: 16,
+        overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, elevation: 2,
+    },
+    newsImage: {
+        width: '100%', height: 120,
+    },
+    newsContent: {
+        padding: 12,
+    },
+    newsDate: {
+        fontSize: 11, color: '#94a3b8', marginBottom: 4,
+    },
+    newsTitle: {
+        fontSize: 14, fontWeight: '700', color: '#1e293b',
+    },
+    emptyCard: {
+        padding: 40, alignItems: 'center', backgroundColor: '#f1f5f9', borderRadius: 20, width: width - 40,
+    },
+    emptyText: {
+        fontSize: 14, color: '#64748b', marginTop: 12, textAlign: 'center',
     },
 });

@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, StyleSheet, Dimensions } from 'react-native';
-import { ShoppingBag, Star, ChevronRight, Search, MapPin, ArrowLeft, Filter } from 'lucide-react-native';
+import { Plus, Search, Tag, ChevronRight, X, DollarSign, FileText, ArrowLeft, Camera, Filter, Grid, List, ShoppingBag, Star } from 'lucide-react-native';
+import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
+import { API_URL } from '../api';
 
 const { width } = Dimensions.get('window');
 
@@ -34,11 +37,33 @@ const MOCK_SHOPS = [
 const CATEGORIES = ['Tudo', 'Restaurante', 'Sorveteria', 'Padaria', 'Farmácia', 'Lixo Zero', 'Pet Shop'];
 
 export default function ShopsScreen({ route, navigation }: any) {
+    const { token, selectedNeighborhood } = useAuth() as any;
     const { category: initialCategory } = route.params || {};
     const [selectedCategory, setSelectedCategory] = useState(initialCategory || 'Tudo');
     const [search, setSearch] = useState('');
+    const [shops, setShops] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    const filteredShops = MOCK_SHOPS.filter(shop => {
+    const fetchShops = async () => {
+        if (!selectedNeighborhood?.id) return;
+        setLoading(true);
+        try {
+            const res = await axios.get(`${API_URL}/api/shops?neighborhoodId=${selectedNeighborhood.id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setShops(res.data);
+        } catch (err) {
+            console.error('Error fetching shops:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (token && selectedNeighborhood?.id) fetchShops();
+    }, [token, selectedNeighborhood]);
+
+    const filteredShops = shops.filter(shop => {
         const matchesCategory = selectedCategory === 'Tudo' || shop.category === selectedCategory;
         const matchesSearch = shop.name.toLowerCase().includes(search.toLowerCase());
         return matchesCategory && matchesSearch;

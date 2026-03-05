@@ -5,7 +5,12 @@ const auth = require('../middleware/auth');
 
 // List ads in neighborhood
 router.get('/', auth, async (req, res) => {
-    const { neighborhood_id } = req.user;
+    const neighborhood_id = req.query.neighborhoodId || req.user.neighborhood_id;
+
+    if (!neighborhood_id) {
+        return res.status(400).json({ message: 'Neighborhood ID required' });
+    }
+
     try {
         const result = await db.query(
             'SELECT * FROM ads WHERE neighborhood_id = $1 AND status = $2 ORDER BY created_at DESC',

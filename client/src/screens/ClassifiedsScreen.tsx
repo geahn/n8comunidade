@@ -20,7 +20,7 @@ const categoryColors: Record<string, string> = {
 };
 
 export default function ClassifiedsScreen({ navigation, route }: any) {
-    const { token } = useAuth() as any;
+    const { token, selectedNeighborhood } = useAuth() as any;
     const [ads, setAds] = useState<any[]>([]);
     const [filtered, setFiltered] = useState<any[]>([]);
     const [selectedCategory, setSelectedCategory] = useState('Todos');
@@ -40,8 +40,10 @@ export default function ClassifiedsScreen({ navigation, route }: any) {
     });
 
     const fetchAds = async () => {
+        if (!selectedNeighborhood?.id) return;
+        setLoading(true);
         try {
-            const res = await axios.get(`${API_URL}/api/ads`, {
+            const res = await axios.get(`${API_URL}/api/ads?neighborhoodId=${selectedNeighborhood.id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setAds(res.data);
@@ -55,9 +57,9 @@ export default function ClassifiedsScreen({ navigation, route }: any) {
     };
 
     useEffect(() => {
-        if (token) fetchAds();
+        if (token && selectedNeighborhood?.id) fetchAds();
         if (route.params?.openForm) setShowForm(true);
-    }, [route.params?.openForm, token]);
+    }, [route.params?.openForm, token, selectedNeighborhood]);
 
     useEffect(() => {
         let result = ads;
