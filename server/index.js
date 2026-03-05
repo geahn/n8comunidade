@@ -29,7 +29,6 @@ const contactsRoutes = require('./routes/contacts');
 const adminRoutes = require('./routes/admin');
 const ordersRoutes = require('./routes/orders');
 const searchRoutes = require('./routes/search');
-const neighborhoodRoutes = require('./routes/neighborhoods');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/neighborhoods', neighborhoodRoutes);
@@ -41,7 +40,6 @@ app.use('/api/contacts', contactsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/search', searchRoutes);
-app.use('/api/neighborhoods', neighborhoodRoutes);
 
 // Catch-all route to serve the frontend for any non-API requests (SPA routing)
 app.get(/^(?!\/api).+/, (req, res) => {
