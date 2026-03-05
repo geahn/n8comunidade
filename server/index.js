@@ -20,12 +20,18 @@ const neighborhoodRoutes = require('./routes/neighborhoods');
 const dashboardRoutes = require('./routes/dashboard');
 const shopRoutes = require('./routes/shops');
 const adRoutes = require('./routes/ads');
+const newsRoutes = require('./routes/news');
+const contactsRoutes = require('./routes/contacts');
+const adminRoutes = require('./routes/admin');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/neighborhoods', neighborhoodRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/shops', shopRoutes);
 app.use('/api/ads', adRoutes);
+app.use('/api/news', newsRoutes);
+app.use('/api/contacts', contactsRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
