@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, Switch, StyleSheet, Dimensions, StatusBar } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, Switch, StyleSheet, Dimensions, StatusBar, Image } from 'react-native';
 import { Globe, Users, MapPin, Settings, ChevronRight, CheckCircle, XCircle, LayoutDashboard, Building, Sliders, Bell, ArrowLeft, TrendingUp, ShoppingBag } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 
@@ -22,7 +22,7 @@ const MOCK_GLOBAL_STATS = [
 export default function SuperAdminPanelScreen({ navigation }: any) {
     const { user, logout } = useAuth() as any;
     const [neighborhoods, setNeighborhoods] = useState(MOCK_NEIGHBORHOODS);
-    const [activeTab, setActiveTab] = useState<'dashboard' | 'neighborhoods' | 'settings'>('dashboard');
+    const [activeTab, setActiveTab] = useState<'dashboard' | 'neighborhoods' | 'banners' | 'settings'>('dashboard');
     const [commission, setCommission] = useState({ admin: 10, super: 5 });
 
     const toggleNeighborhoodStatus = (id: string) => {
@@ -59,6 +59,7 @@ export default function SuperAdminPanelScreen({ navigation }: any) {
                     {[
                         { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
                         { key: 'neighborhoods', label: 'Bairros', icon: Building },
+                        { key: 'banners', label: 'Banners', icon: Globe },
                         { key: 'settings', label: 'Ajustes', icon: Sliders },
                     ].map(tab => {
                         const Icon = tab.icon;
@@ -151,6 +152,34 @@ export default function SuperAdminPanelScreen({ navigation }: any) {
                     </View>
                 )}
 
+                {activeTab === 'banners' && (
+                    <View style={styles.settingsCard}>
+                        <Text style={styles.sectionTitle}>Gestão de Mini Banners</Text>
+                        <Text style={styles.settingsSub}>Personalize os atalhos rápidos do dashboard.</Text>
+
+                        <TouchableOpacity style={styles.approveBtn}>
+                            <Text style={styles.approveBtnText}>+ Adicionar Novo Banner</Text>
+                        </TouchableOpacity>
+
+                        <View style={{ marginTop: 20 }}>
+                            {[
+                                { id: 1, title: 'Mercado', img: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=200&q=80' },
+                                { id: 2, title: 'Restaurantes', img: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=200&q=80' },
+                            ].map(b => (
+                                <View key={b.id} style={styles.bannerRow}>
+                                    <Image source={{ uri: b.img }} style={styles.bannerThumb} />
+                                    <View style={{ flex: 1, marginLeft: 12 }}>
+                                        <Text style={styles.nbApprovalTitle}>{b.title}</Text>
+                                        <Text style={styles.nbApprovalSlug}>Ordem: {b.id}</Text>
+                                    </View>
+                                    <TouchableOpacity>
+                                        <XCircle size={20} color="#ef4444" />
+                                    </TouchableOpacity>
+                                </View>
+                            ))}
+                        </View>
+                    </View>
+                )}
                 {activeTab === 'settings' && (
                     <View style={styles.settingsCard}>
                         <Text style={styles.sectionTitle}>Política de Comissões</Text>
@@ -345,5 +374,11 @@ const styles = StyleSheet.create({
     },
     saveBtnText: {
         color: 'white', fontSize: 16, fontWeight: '800',
+    },
+    bannerRow: {
+        flexDirection: 'row', alignItems: 'center', padding: 12, backgroundColor: '#f8fafc', borderRadius: 16, marginBottom: 12,
+    },
+    bannerThumb: {
+        width: 50, height: 50, borderRadius: 10,
     },
 });

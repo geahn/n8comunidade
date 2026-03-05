@@ -41,12 +41,18 @@ const BANNER_INTERVAL = 5000;
 
 export default function DashboardScreen({ navigation }: any) {
     const { token, user }: any = useAuth();
-    const [data, setData] = useState<any>({ news: [], shops: [], ads: [] });
+    const [data, setData] = useState<any>({ news: [], shops: [], ads: [], banners: [] });
     const [refreshing, setRefreshing] = useState(false);
     const [loading, setLoading] = useState(true);
     const [neighborhoodModal, setNeighborhoodModal] = useState(false);
     const [currentNeighborhood, setCurrentNeighborhood] = useState(MOCK_NEIGHBORHOODS[0]);
     const [bannerIndex, setBannerIndex] = useState(0);
+
+    // Search state
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [searchVisible, setSearchVisible] = useState(false);
 
     const scrollY = useRef(new Animated.Value(0)).current;
     const bannerScrollRef = useRef<ScrollView>(null);
@@ -68,6 +74,27 @@ export default function DashboardScreen({ navigation }: any) {
     useEffect(() => {
         if (token) fetchData();
     }, [token]);
+
+    const handleSearch = async (text: string) => {
+        setSearchQuery(text);
+        if (text.length > 2) {
+            setIsSearching(true);
+            try {
+                const r = await axios.get(`${API_URL}/api/search?q=${text}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setSearchResults(r.data);
+                setSearchVisible(true);
+            } catch (err) {
+                console.error('Search error:', err);
+            } finally {
+                setIsSearching(false);
+            }
+        } else {
+            setSearchResults([]);
+            setSearchVisible(false);
+        }
+    };
 
     // Header Animations
     const headerHeight = scrollY.interpolate({
@@ -143,9 +170,52 @@ export default function DashboardScreen({ navigation }: any) {
                             placeholder="O que você precisa hoje?"
                             placeholderTextColor="#94a3b8"
                             style={styles.searchInput}
+                            value={searchQuery}
+                            onChangeText={handleSearch}
+                            onFocus={() => searchQuery.length > 2 && setSearchVisible(true)}
                         />
+                        {isSearching && <ActivityIndicator size="small" color="#1d4ed8" style={{ marginLeft: 8 }} />}
                     </Animated.View>
                 </View>
+
+                {/* Unified Search Results Overlay */}
+                {searchVisible && searchResults.length > 0 && (
+                    <View style={styles.searchResultsWrapper}>
+                        <View style={styles.searchResultsContainer}>
+                            <ScrollView style={{ maxHeight: 400 }}>
+                                {searchResults.map((item, idx) => (
+                                    <TouchableOpacity
+                                        key={`${item.type}-${item.id}-${idx}`}
+                                        style={styles.searchResultItem}
+                                        onPress={() => {
+                                            setSearchVisible(false);
+                                            setSearchQuery('');
+                                            if (item.type === 'shop') navigation.navigate('ShopDetail', { shop: item });
+                                            else if (item.type === 'news') navigation.navigate('NewsDetail', { news: item });
+                                            else if (item.type === 'ad') navigation.navigate('ClassifiedDetail', { ad: item });
+                                        }}
+                                    >
+                                        <Image source={{ uri: item.image_url || 'https://via.placeholder.com/50' }} style={styles.searchResultImage} />
+                                        <View style={{ flex: 1, marginLeft: 12 }}>
+                                            <View style={styles.searchResultHeader}>
+                                                <Text style={styles.searchResultTitle} numberOfLines={1}>{item.title}</Text>
+                                                <View style={[styles.badge, styles[`badge_${item.type}` as keyof typeof styles]]}>
+                                                    <Text style={styles.badgeText}>{item.type.toUpperCase()}</Text>
+                                                </View>
+                                            </View>
+                                            <Text style={styles.searchResultSub} numberOfLines={1}>
+                                                {item.type === 'shop' ? `⭐ ${item.rating || 'N/A'}` : item.type === 'ad' ? `R$ ${item.price}` : 'Ver notícia'}
+                                            </Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                            <TouchableOpacity style={styles.closeSearch} onPress={() => setSearchVisible(false)}>
+                                <Text style={styles.closeSearchText}>Fechar</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                )}
             </Animated.View>
 
             {/* ─── Content ─── */}
@@ -176,17 +246,34 @@ export default function DashboardScreen({ navigation }: any) {
                     ))}
                 </ScrollView>
 
-                {/* Quick Access Menu */}
-                <View style={styles.quickAccess}>
-                    {QUICK_ACTIONS.map(item => (
-                        <TouchableOpacity key={item.label} onPress={() => navigation.navigate(item.tab)} style={styles.quickActionItem}>
-                            <View style={[styles.quickActionIcon, { backgroundColor: item.color + '10' }]}>
-                                <Text style={{ fontSize: 28 }}>{item.emoji}</Text>
+                {/* Mini Banners (Categories Replacement) */}
+                <View style={[styles.sectionHeader, { marginTop: 10 }]}>
+                    <Text style={styles.sectionTitle}>O que deseja hoje?</Text>
+                </View>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingHorizontal: 20, gap: 12, paddingBottom: 10 }}
+                >
+                    {(data.banners && data.banners.length > 0 ? data.banners : QUICK_ACTIONS).map((item: any) => (
+                        <TouchableOpacity
+                            key={item.id || item.label}
+                            onPress={() => {
+                                if (item.action_type === 'screen') navigation.navigate(item.action_target);
+                                else if (item.tab) navigation.navigate(item.tab);
+                            }}
+                            style={styles.miniBannerItem}
+                        >
+                            <Image
+                                source={{ uri: item.image_url || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=200&q=80' }}
+                                style={styles.miniBannerImage}
+                            />
+                            <View style={styles.miniBannerOverlay}>
+                                <Text style={styles.miniBannerLabel}>{item.title || item.label}</Text>
                             </View>
-                            <Text style={styles.quickActionLabel}>{item.label}</Text>
                         </TouchableOpacity>
                     ))}
-                </View>
+                </ScrollView>
 
                 {/* Section: Shops (iFood Style) */}
                 <View style={styles.sectionHeader}>
@@ -212,6 +299,27 @@ export default function DashboardScreen({ navigation }: any) {
                     )}
                 </ScrollView>
 
+                {/* Section: News */}
+                <View style={[styles.sectionHeader, { marginTop: 32 }]}>
+                    <Text style={styles.sectionTitle}>Últimas Notícias</Text>
+                    <TouchableOpacity onPress={() => navigation.navigate('Notícias')}>
+                        <Text style={styles.seeAll}>Ver todas</Text>
+                    </TouchableOpacity>
+                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 16 }}>
+                    {data.news.length > 0 ? data.news.map((n: any) => (
+                        <TouchableOpacity key={n.id} onPress={() => navigation.navigate('NewsDetail', { news: n })} style={styles.newsCard}>
+                            <Image source={{ uri: n.image_url || 'https://via.placeholder.com/300' }} style={styles.newsImage} />
+                            <View style={styles.newsContent}>
+                                <Text style={styles.newsDate}>{new Date(n.created_at).toLocaleDateString()}</Text>
+                                <Text style={styles.newsTitle} numberOfLines={2}>{n.title}</Text>
+                            </View>
+                        </TouchableOpacity>
+                    )) : (
+                        <View style={styles.emptyCard}><Text style={styles.emptyText}>Sem notícias no momento</Text></View>
+                    )}
+                </ScrollView>
+
                 {/* Section: Classifieds (OLX Style) */}
                 <View style={[styles.sectionHeader, { marginTop: 32 }]}>
                     <Text style={styles.sectionTitle}>Classificados recentes</Text>
@@ -222,7 +330,7 @@ export default function DashboardScreen({ navigation }: any) {
                 <View style={{ paddingHorizontal: 20 }}>
                     {data.ads.length > 0 ? data.ads.slice(0, 4).map((ad: any) => (
                         <TouchableOpacity key={ad.id} onPress={() => navigation.navigate('ClassifiedDetail', { ad })} style={styles.adCard}>
-                            <Image source={{ uri: ad.images?.[0] || 'https://via.placeholder.com/100' }} style={styles.adImage} />
+                            <Image source={{ uri: ad.image_url || 'https://via.placeholder.com/100' }} style={styles.adImage} />
                             <View style={styles.adContent}>
                                 <Text style={styles.adTitle} numberOfLines={1}>{ad.title}</Text>
                                 <Text style={styles.adCategory}>{ad.category}</Text>
@@ -329,17 +437,53 @@ const styles = StyleSheet.create({
     bannerSubtitle: {
         color: 'rgba(255,255,255,0.9)', fontSize: 14, marginTop: 2, fontWeight: '600',
     },
-    quickAccess: {
-        flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 20, marginTop: 24, justifyContent: 'space-between',
+    miniBannerItem: {
+        width: 120, height: 160, borderRadius: 20, overflow: 'hidden', backgroundColor: '#e2e8f0',
     },
-    quickActionItem: {
-        width: '23%', alignItems: 'center', marginBottom: 16,
+    miniBannerImage: {
+        width: '100%', height: '100%',
     },
-    quickActionIcon: {
-        width: 68, height: 68, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 10,
+    miniBannerOverlay: {
+        position: 'absolute', bottom: 0, left: 0, right: 0, padding: 12, backgroundColor: 'rgba(0,0,0,0.4)',
     },
-    quickActionLabel: {
-        fontSize: 12, fontWeight: '700', color: '#334155', textAlign: 'center',
+    miniBannerLabel: {
+        color: 'white', fontSize: 13, fontWeight: '800', textAlign: 'center',
+    },
+    searchResultsWrapper: {
+        position: 'absolute', top: 180, left: 20, right: 20, zIndex: 200,
+    },
+    searchResultsContainer: {
+        backgroundColor: 'white', borderRadius: 24, padding: 10, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 20, elevation: 10,
+    },
+    searchResultItem: {
+        flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: 1, borderBottomColor: '#f1f5f9',
+    },
+    searchResultImage: {
+        width: 50, height: 50, borderRadius: 12,
+    },
+    searchResultHeader: {
+        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    },
+    searchResultTitle: {
+        fontSize: 15, fontWeight: '700', color: '#1e293b', flex: 1,
+    },
+    searchResultSub: {
+        fontSize: 13, color: '#64748b', marginTop: 2,
+    },
+    badge: {
+        paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, marginLeft: 8,
+    },
+    badgeText: {
+        fontSize: 9, fontWeight: '900', color: 'white',
+    },
+    badge_shop: { backgroundColor: '#10b981' },
+    badge_news: { backgroundColor: '#3b82f6' },
+    badge_ad: { backgroundColor: '#8b5cf6' },
+    closeSearch: {
+        padding: 12, alignItems: 'center',
+    },
+    closeSearchText: {
+        color: '#1d4ed8', fontWeight: '800',
     },
     sectionHeader: {
         flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, marginBottom: 16, marginTop: 16,
