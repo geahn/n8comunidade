@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, Text } from 'react-native';
+import { View, TouchableOpacity, Text, Platform, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import { Home, LayoutGrid, Users, Newspaper, ShoppingBag, Plus } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
+import { BlurView } from 'expo-blur';
 
 import DashboardScreen from '../screens/DashboardScreen';
 import ClassifiedsScreen from '../screens/ClassifiedsScreen';
@@ -60,24 +61,35 @@ function MainTabBar() {
             <Tab.Navigator
                 screenOptions={{
                     tabBarActiveTintColor: '#1d4ed8',
-                    tabBarInactiveTintColor: '#94a3b8',
+                    tabBarInactiveTintColor: '#64748b',
                     headerShown: false,
                     tabBarStyle: {
-                        height: 78,
-                        paddingBottom: 20,
-                        paddingTop: 10,
-                        borderTopLeftRadius: 28,
-                        borderTopRightRadius: 28,
-                        backgroundColor: '#ffffff',
                         position: 'absolute',
+                        bottom: 24,
+                        left: 24,
+                        right: 24,
+                        height: 74,
+                        borderRadius: 37,
+                        backgroundColor: Platform.OS === 'android' ? 'rgba(255, 255, 255, 0.95)' : 'transparent',
                         borderTopWidth: 0,
                         shadowColor: '#000',
-                        shadowOffset: { width: 0, height: -4 },
-                        shadowOpacity: 0.1,
-                        shadowRadius: 12,
-                        elevation: 12,
+                        shadowOffset: { width: 0, height: 10 },
+                        shadowOpacity: 0.15,
+                        shadowRadius: 20,
+                        elevation: 10,
+                        paddingBottom: Platform.OS === 'ios' ? 10 : 8,
+                        paddingTop: 8,
                     },
-                    tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+                    tabBarBackground: () => (
+                        Platform.OS !== 'android' ? (
+                            <BlurView 
+                                tint="light" 
+                                intensity={60} 
+                                style={[StyleSheet.absoluteFill, { borderRadius: 37, overflow: 'hidden' }]} 
+                            />
+                        ) : null
+                    ),
+                    tabBarLabelStyle: { fontSize: 10, fontWeight: '700', marginBottom: 6 },
                 }}
             >
                 <Tab.Screen name="Meu Bairro" component={DashboardScreen}
@@ -113,7 +125,7 @@ function MainTabBar() {
             {hasPanel && (
                 <TouchableOpacity onPress={panelScreen}
                     style={{
-                        position: 'absolute', bottom: 90, right: 16,
+                        position: 'absolute', bottom: 110, right: 16,
                         backgroundColor: user?.role === 'global_admin' ? '#0f172a' : user?.role === 'neighborhood_admin' ? '#7c3aed' : user?.role === 'driver' ? '#f59e0b' : '#065f46',
                         borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10,
                         flexDirection: 'row', alignItems: 'center',

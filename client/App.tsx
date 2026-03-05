@@ -36,10 +36,14 @@ function Navigation() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <CartProvider>
-        <Navigation />
-      </CartProvider>
-    </AuthProvider>
+    <View style={{ flex: 1, backgroundColor: '#cbd5e1' }}>
+      <View style={{ flex: 1, width: '100%', maxWidth: 1400, alignSelf: 'center', backgroundColor: '#f8fafc', overflow: 'hidden' }}>
+        <AuthProvider>
+          <CartProvider>
+            <Navigation />
+          </CartProvider>
+        </AuthProvider>
+      </View>
+    </View>
   );
 }

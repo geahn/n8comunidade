@@ -315,17 +315,29 @@ export default function DashboardScreen({ navigation }: any) {
                         <TouchableOpacity
                             key={item.id || item.label}
                             onPress={() => {
-                                if (item.action_type === 'screen') navigation.navigate(item.action_target);
-                                else if (item.tab) navigation.navigate(item.tab);
+                                if (item.action_type === 'screen' || item.action?.type === 'screen') {
+                                    navigation.navigate(item.action_target || item.action?.target);
+                                } else if (item.tab) navigation.navigate(item.tab);
                             }}
                             style={styles.miniBannerItem}
+                            activeOpacity={0.8}
                         >
-                            <Image
-                                source={{ uri: item.image_url || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=200&q=80' }}
-                                style={styles.miniBannerImage}
-                            />
-                            <View style={styles.miniBannerOverlay}>
-                                <Text style={styles.miniBannerLabel}>{item.title || item.label}</Text>
+                            <View style={styles.miniBannerContent}>
+                                <Text style={styles.miniBannerLabel} numberOfLines={2}>{item.title || item.label}</Text>
+                                {(item.subtitle || item.desc) && (
+                                    <Text style={styles.miniBannerDesc} numberOfLines={1}>{item.subtitle || item.desc}</Text>
+                                )}
+                            </View>
+
+                            <View style={styles.miniBannerIconContainer}>
+                                {item.image_url ? (
+                                    <Image
+                                        source={{ uri: item.image_url }}
+                                        style={styles.miniBannerIcon}
+                                    />
+                                ) : (
+                                    <Text style={styles.miniBannerEmoji}>{item.emoji || '✨'}</Text>
+                                )}
                             </View>
                         </TouchableOpacity>
                     ))}
@@ -498,17 +510,30 @@ const styles = StyleSheet.create({
         color: 'rgba(255,255,255,0.9)', fontSize: 14, marginTop: 2, fontWeight: '600',
     },
     miniBannerItem: {
-        width: 160, height: 100, borderRadius: 20, overflow: 'hidden', backgroundColor: '#e2e8f0',
-        shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10, elevation: 4,
+        width: 140, aspectRatio: 4 / 3, borderRadius: 20, overflow: 'hidden', backgroundColor: '#1d4ed8',
+        shadowColor: '#1d4ed8', shadowOpacity: 0.3, shadowRadius: 10, elevation: 6,
+        padding: 16,
+        justifyContent: 'space-between',
     },
-    miniBannerImage: {
-        width: '100%', height: '100%',
-    },
-    miniBannerOverlay: {
-        position: 'absolute', bottom: 0, left: 0, right: 0, padding: 12, backgroundColor: 'rgba(0,0,0,0.35)',
+    miniBannerContent: {
+        zIndex: 2,
     },
     miniBannerLabel: {
-        color: 'white', fontSize: 13, fontWeight: '800', textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2,
+        color: 'white', fontSize: 16, fontWeight: '900',
+    },
+    miniBannerDesc: {
+        color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: '600', marginTop: 4,
+    },
+    miniBannerIconContainer: {
+        position: 'absolute', bottom: -15, right: -15, zIndex: 1,
+        width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(255,255,255,0.15)',
+        alignItems: 'center', justifyContent: 'center',
+    },
+    miniBannerIcon: {
+        width: 60, height: 60, borderRadius: 30,
+    },
+    miniBannerEmoji: {
+        fontSize: 36,
     },
     searchResultsWrapper: {
         position: 'absolute', top: 180, left: 20, right: 20, zIndex: 200,
