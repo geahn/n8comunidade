@@ -63,7 +63,7 @@ function MainTabBar() {
             <Tab.Navigator
                 screenOptions={{
                     tabBarActiveTintColor: '#ffffff',
-                    tabBarInactiveTintColor: '#cbd5e1',
+                    tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.6)',
                     headerShown: false,
                     tabBarStyle: {
                         position: 'absolute',
@@ -73,11 +73,11 @@ function MainTabBar() {
                         maxWidth: 400,
                         height: 74,
                         borderRadius: 37,
-                        backgroundColor: Platform.OS === 'android' ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.5)',
+                        backgroundColor: Platform.OS === 'android' ? 'rgba(29, 78, 216, 0.95)' : 'rgba(29, 78, 216, 0.75)', // Blue primary color
                         borderTopWidth: 0,
-                        shadowColor: '#000',
+                        shadowColor: '#1d4ed8', // Colored shadow for extra premium feel
                         shadowOffset: { width: 0, height: 10 },
-                        shadowOpacity: 0.25,
+                        shadowOpacity: 0.3,
                         shadowRadius: 20,
                         elevation: 10,
                         paddingBottom: Platform.OS === 'ios' ? 10 : 8,
@@ -89,8 +89,8 @@ function MainTabBar() {
                         Platform.OS !== 'android' ? (
                             <View style={[StyleSheet.absoluteFill, { borderRadius: 37, overflow: 'hidden' }]}>
                                 <BlurView 
-                                    tint="systemThinMaterialDark" 
-                                    intensity={80} 
+                                    tint="light" 
+                                    intensity={60} 
                                     style={StyleSheet.absoluteFill} 
                                 />
                             </View>
@@ -109,11 +109,11 @@ function MainTabBar() {
                             <TouchableOpacity onPress={() => setPublishVisible(true)}
                                 style={{ top: -16, alignSelf: 'center', alignItems: 'center', justifyContent: 'center', width: 64, height: 64 }}>
                                 <View style={{
-                                    width: 64, height: 64, borderRadius: 32, backgroundColor: '#1d4ed8',
+                                    width: 64, height: 64, borderRadius: 32, backgroundColor: '#ffffff',
                                     alignItems: 'center', justifyContent: 'center',
-                                    shadowColor: '#1d4ed8', shadowOpacity: 0.5, shadowRadius: 10, elevation: 8,
+                                    shadowColor: '#1d4ed8', shadowOpacity: 0.4, shadowRadius: 10, elevation: 8,
                                 }}>
-                                    <Plus size={30} color="white" />
+                                    <Plus size={30} color="#1d4ed8" />
                                 </View>
                             </TouchableOpacity>
                         ),
