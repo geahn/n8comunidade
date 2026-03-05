@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, Text, Platform, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, Text, Platform, StyleSheet, Dimensions } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
@@ -33,6 +33,8 @@ function MainTabBar() {
     const { user } = useAuth() as any;
     const navigation = useNavigation<any>();
     const [publishVisible, setPublishVisible] = useState(false);
+    const windowWidth = Dimensions.get('window').width;
+    const isSmallScreen = windowWidth < 444;
 
     const panelScreen = () => {
         const role = user?.role;
@@ -60,33 +62,38 @@ function MainTabBar() {
         <>
             <Tab.Navigator
                 screenOptions={{
-                    tabBarActiveTintColor: '#1d4ed8',
-                    tabBarInactiveTintColor: '#64748b',
+                    tabBarActiveTintColor: '#ffffff',
+                    tabBarInactiveTintColor: '#cbd5e1',
                     headerShown: false,
                     tabBarStyle: {
                         position: 'absolute',
                         bottom: 24,
-                        left: 24,
-                        right: 24,
+                        alignSelf: 'center',
+                        width: '90%',
+                        maxWidth: 400,
                         height: 74,
                         borderRadius: 37,
-                        backgroundColor: Platform.OS === 'android' ? 'rgba(255, 255, 255, 0.95)' : 'transparent',
+                        backgroundColor: Platform.OS === 'android' ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.5)',
                         borderTopWidth: 0,
                         shadowColor: '#000',
                         shadowOffset: { width: 0, height: 10 },
-                        shadowOpacity: 0.15,
+                        shadowOpacity: 0.25,
                         shadowRadius: 20,
                         elevation: 10,
                         paddingBottom: Platform.OS === 'ios' ? 10 : 8,
                         paddingTop: 8,
+                        left: '50%',
+                        marginLeft: isSmallScreen ? -(windowWidth * 0.45) : -200,
                     },
                     tabBarBackground: () => (
                         Platform.OS !== 'android' ? (
-                            <BlurView 
-                                tint="light" 
-                                intensity={60} 
-                                style={[StyleSheet.absoluteFill, { borderRadius: 37, overflow: 'hidden' }]} 
-                            />
+                            <View style={[StyleSheet.absoluteFill, { borderRadius: 37, overflow: 'hidden' }]}>
+                                <BlurView 
+                                    tint="systemThinMaterialDark" 
+                                    intensity={80} 
+                                    style={StyleSheet.absoluteFill} 
+                                />
+                            </View>
                         ) : null
                     ),
                     tabBarLabelStyle: { fontSize: 10, fontWeight: '700', marginBottom: 6 },

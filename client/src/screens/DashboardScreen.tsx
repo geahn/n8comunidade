@@ -23,11 +23,36 @@ const MOCK_NEIGHBORHOODS = [
     { id: '3', name: 'Jardim das Flores', city: 'São Paulo' },
 ];
 
-const MOCK_BANNERS = [
-    { id: '1', image_url: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80', title: 'Festival Gastronômico', subtitle: 'Este fim de semana • Grátis', action: { type: 'screen', target: 'Lojas', params: { category: 'Restaurante' } } },
-    { id: '2', image_url: 'https://images.unsplash.com/photo-1557800636-894a64c1696f?w=800&q=80', title: 'Açaí com 15% OFF', subtitle: 'Aproveite o calor com desconto', action: { type: 'screen', target: 'Lojas', params: { category: 'Sorveteria', hasPromo: true } } },
-    { id: '3', image_url: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=800&q=80', title: 'Campeonato de Skate', subtitle: 'Sábado às 14h na nova praça', action: null },
-];
+const getDynamicBanners = (neighborhoodId: string | number | undefined) => {
+    const defaultBanners = [
+        { id: '1', image_url: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80', title: 'Festival Gastronômico', subtitle: 'Este fim de semana • Grátis', action: { type: 'screen', target: 'Lojas', params: { category: 'Restaurante' } } },
+        { id: '2', image_url: 'https://images.unsplash.com/photo-1557800636-894a64c1696f?w=800&q=80', title: 'Açaí com 15% OFF', subtitle: 'Aproveite o calor com desconto', action: { type: 'screen', target: 'Lojas', params: { category: 'Sorveteria', hasPromo: true } } },
+        { id: '3', image_url: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=800&q=80', title: 'Campeonato de Skate', subtitle: 'Sábado às 14h na nova praça', action: null },
+    ];
+
+    if (!neighborhoodId) return defaultBanners;
+
+    // Create a deterministic pseudo-random variation based on the neighborhood ID
+    const seed = String(neighborhoodId).charCodeAt(0) % 3;
+    
+    if (seed === 0) {
+        return [
+            { id: '10', image_url: 'https://images.unsplash.com/photo-1533900298318-6b8da08a523e?w=800&q=80', title: 'Feira Livre Hoje!', subtitle: 'Frutas e verduras frescas', action: { type: 'screen', target: 'Lojas' } },
+            { id: '11', image_url: 'https://images.unsplash.com/photo-1544006659-f0b21884ce1d?w=800&q=80', title: 'Adoção de Pets', subtitle: 'Domingo na praça central', action: null },
+        ];
+    } else if (seed === 1) {
+        return [
+            { id: '20', image_url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80', title: 'Trilha no Parque', subtitle: 'Junte-se ao grupo local', action: null },
+            { id: '21', image_url: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800&q=80', title: 'Nova Pizzaria', subtitle: 'Cupom: VIZINHO10', action: { type: 'screen', target: 'Lojas' } },
+            { id: '22', image_url: 'https://images.unsplash.com/photo-1528698827591-e19ccd7bc23d?w=800&q=80', title: 'Bazar Comunitário', subtitle: 'Roupas com até 70% OFF', action: { type: 'screen', target: 'Classificados' } },
+        ];
+    } else {
+        return [
+            { id: '30', image_url: 'https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?w=800&q=80', title: 'Aulas de Culinária', subtitle: 'Inscrições abertas no centro', action: null },
+            { id: '31', image_url: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=800&q=80', title: 'Cafeteria do Bairro', subtitle: 'Café em dobro até as 10h', action: { type: 'screen', target: 'Lojas' } },
+        ];
+    }
+};
 
 const QUICK_ACTIONS = [
     { label: 'Mercado', emoji: '🍎', color: '#10b981', tab: 'Lojas', desc: 'Fresco e rápido' },
@@ -291,8 +316,10 @@ export default function DashboardScreen({ navigation }: any) {
                     style={styles.bannerContainer}
                     contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
                 >
-                    {MOCK_BANNERS.map(b => (
-                        <TouchableOpacity key={b.id} style={styles.bannerItem} activeOpacity={0.9}>
+                    {getDynamicBanners(selectedNeighborhood?.id).map((b: any) => (
+                        <TouchableOpacity key={b.id} style={styles.bannerItem} activeOpacity={0.9} onPress={() => {
+                            if (b.action?.type === 'screen') navigation.navigate(b.action.target, b.action.params);
+                        }}>
                             <Image source={{ uri: b.image_url }} style={styles.bannerImage} />
                             <View style={styles.bannerOverlay}>
                                 <Text style={styles.bannerTitle}>{b.title}</Text>
