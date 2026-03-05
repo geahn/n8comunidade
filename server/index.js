@@ -40,7 +40,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/orders', ordersRoutes);
 
 // Catch-all route to serve the frontend for any non-API requests (SPA routing)
-app.get('/:path*', (req, res) => {
+app.get(/^(?!\/api).+/, (req, res) => {
     res.sendFile(path.join(__dirname, '../client/dist/index.html'));
 });
 
