@@ -1,0 +1,64 @@
+const express = require('express');
+const router = express.Router();
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const db = require('../db');
+const { body, validationResult } = require('express-validator');
+
+// Signup
+router.post('/signup', [
+    body('email').isEmail(),
+    body('password').isLength({ min: 6 }),
+    body('full_name').notEmpty(),
+    body('neighborhood_id').isUUID().optional()
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
+    const { email, password, full_name, neighborhood_id } = req.body;
+
+    try {
+        const userExists = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+        if (userExists.rows.length > 0) return res.status(400).json({ message: 'User already exists' });
+
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(password, salt);
+
+        const result = await db.query(
+            'INSERT INTO users (email, password_hash, full_name, neighborhood_id) VALUES ($1, $2, $3, $4) RETURNING id, email, full_name, role, neighborhood_id',
+            [email, passwordHash, full_name, neighborhood_id || null]
+        );
+
+        const user = result.rows[0];
+        const token = jwt.sign({ id: user.id, role: user.role, neighborhood_id: user.neighborhood_id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+        res.status(201).json({ user, token });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Login
+router.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+
+    try {
+        const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+        if (result.rows.length === 0) return res.status(400).json({ message: 'Invalid credentials' });
+
+        const user = result.rows[0];
+        const isMatch = await bcrypt.compare(password, user.password_hash);
+        if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+
+        const token = jwt.sign({ id: user.id, role: user.role, neighborhood_id: user.neighborhood_id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+        delete user.password_hash;
+        res.json({ user, token });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+module.exports = router;
