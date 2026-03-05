@@ -7,7 +7,7 @@ const auth = require('../middleware/auth');
 router.get('/', auth, async (req, res) => {
     try {
         const result = await db.query(
-            'SELECT id, name, slug, city FROM neighborhoods WHERE status = $1 ORDER BY name ASC',
+            'SELECT id, name, slug FROM neighborhoods WHERE status = $1 ORDER BY name ASC',
             ['active']
         );
         res.json(result.rows);
