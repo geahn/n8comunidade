@@ -1,0 +1,12 @@
+{
+  "name": "n8",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "cd server && npm run server",
+    "dev:client": "cd client && npx expo start --port 8082"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
