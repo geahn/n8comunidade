@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import {
     View, Text, ScrollView, TouchableOpacity, TextInput,
-    ActivityIndicator, Image, Animated, Dimensions, RefreshControl, Modal, StyleSheet
+    ActivityIndicator, Image, Animated, Dimensions, RefreshControl, Modal, StyleSheet, StatusBar
 } from 'react-native';
 import { Bell, Search, MapPin, ChevronDown, ChevronRight, Check, ShoppingBag, LayoutGrid, Newspaper, Heart } from 'lucide-react-native';
 import axios from 'axios';
@@ -147,9 +147,21 @@ export default function DashboardScreen({ navigation }: any) {
         extrapolate: 'clamp',
     });
 
+    const searchOpacity = scrollY.interpolate({
+        inputRange: [0, 40],
+        outputRange: [1, 0],
+        extrapolate: 'clamp',
+    });
+
     const searchScale = scrollY.interpolate({
-        inputRange: [0, SCROLL_DIST],
-        outputRange: [1, 0.9],
+        inputRange: [0, 60],
+        outputRange: [1, 0],
+        extrapolate: 'clamp',
+    });
+
+    const searchHeight = scrollY.interpolate({
+        inputRange: [0, 60],
+        outputRange: [52, 0],
         extrapolate: 'clamp',
     });
 
@@ -159,35 +171,36 @@ export default function DashboardScreen({ navigation }: any) {
 
     return (
         <View style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+            <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
             {/* ─── Premium Header ─── */}
             <Animated.View style={[styles.header, { height: headerHeight }]}>
-                {/* Background color transition */}
-                <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: '#1d4ed8', opacity: headerBgOpacity }]} />
+                {/* Fixed Blue Background */}
+                <View style={[StyleSheet.absoluteFill, { backgroundColor: '#1d4ed8' }]} />
 
                 <View style={styles.headerContent}>
                     <View style={styles.headerTop}>
                         {/* Neighborhood Picker */}
                         <TouchableOpacity onPress={() => setNeighborhoodModal(true)} style={styles.locationSelector}>
                             <View style={styles.mapIconCircle}>
-                                <MapPin size={14} color="#1d4ed8" />
+                                <MapPin size={14} color="#ffffff" />
                             </View>
                             <View>
                                 <Text style={styles.locationLabel}>Bairro atual</Text>
                                 <View style={styles.locationContainer}>
                                     <View style={{ flexShrink: 1 }}>
-                                        <Text style={styles.locationName} numberOfLines={1}>{selectedNeighborhood?.name || 'Carregando...'}</Text>
+                                        <Text style={styles.locationName} numberOfLines={1}>{selectedNeighborhood?.name || 'Selecione...'}</Text>
                                     </View>
-                                    <ChevronDown size={14} color="#1e293b" />
+                                    <ChevronDown size={14} color="#ffffff" opacity={0.8} />
                                 </View>
                             </View>
                         </TouchableOpacity>
 
                         {/* User Actions */}
                         <View style={styles.userActions}>
-                            <TouchableOpacity style={styles.actionButton}>
-                                <Bell size={20} color="#1e293b" />
+                            <TouchableOpacity style={[styles.actionButton, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
+                                <Bell size={20} color="#ffffff" />
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => navigation.navigate('Profile')} style={styles.avatarButton}>
+                            <TouchableOpacity onPress={() => navigation.navigate('Profile')} style={[styles.avatarButton, { borderColor: 'rgba(255,255,255,0.3)', borderWidth: 1 }]}>
                                 {user?.avatar_url ? (
                                     <Image source={{ uri: user.avatar_url }} style={styles.avatar} />
                                 ) : (
@@ -197,8 +210,17 @@ export default function DashboardScreen({ navigation }: any) {
                         </View>
                     </View>
 
-                    {/* Search Bar */}
-                    <Animated.View style={[styles.searchContainer, { transform: [{ translateY: searchTranslateY }, { scale: searchScale }] }]}>
+                    {/* Search Bar - Hidden on scroll */}
+                    <Animated.View style={[
+                        styles.searchContainer,
+                        {
+                            opacity: searchOpacity,
+                            transform: [{ scale: searchScale }],
+                            height: searchHeight,
+                            marginTop: scrollY.interpolate({ inputRange: [0, 50], outputRange: [0, -20], extrapolate: 'clamp' }),
+                            overflow: 'hidden'
+                        }
+                    ]}>
                         <Search size={18} color="#94a3b8" />
                         <TextInput
                             placeholder="O que você precisa hoje?"
@@ -411,9 +433,9 @@ export default function DashboardScreen({ navigation }: any) {
 const styles = StyleSheet.create({
     header: {
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100,
-        backgroundColor: '#ffffff',
+        backgroundColor: '#1d4ed8',
         borderBottomLeftRadius: 32, borderBottomRightRadius: 32,
-        shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 15, elevation: 5,
+        shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 20, elevation: 8,
     },
     headerContent: {
         paddingHorizontal: 20, paddingTop: 55,
@@ -425,16 +447,16 @@ const styles = StyleSheet.create({
         flexDirection: 'row', alignItems: 'center', flex: 1,
     },
     mapIconCircle: {
-        width: 34, height: 34, borderRadius: 17, backgroundColor: '#eff6ff', alignItems: 'center', justifyContent: 'center', marginRight: 12,
+        width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', marginRight: 12,
     },
     locationLabel: {
-        fontSize: 11, color: '#94a3b8', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5,
+        fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5,
     },
     locationContainer: {
         flexDirection: 'row', alignItems: 'center',
     },
     locationName: {
-        fontSize: 18, fontWeight: '800', color: '#1e293b', marginRight: 4,
+        fontSize: 18, fontWeight: '800', color: '#ffffff', marginRight: 4,
     },
     userActions: {
         flexDirection: 'row', alignItems: 'center', gap: 10,
@@ -476,16 +498,17 @@ const styles = StyleSheet.create({
         color: 'rgba(255,255,255,0.9)', fontSize: 14, marginTop: 2, fontWeight: '600',
     },
     miniBannerItem: {
-        width: 120, height: 160, borderRadius: 20, overflow: 'hidden', backgroundColor: '#e2e8f0',
+        width: 160, height: 100, borderRadius: 20, overflow: 'hidden', backgroundColor: '#e2e8f0',
+        shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10, elevation: 4,
     },
     miniBannerImage: {
         width: '100%', height: '100%',
     },
     miniBannerOverlay: {
-        position: 'absolute', bottom: 0, left: 0, right: 0, padding: 12, backgroundColor: 'rgba(0,0,0,0.4)',
+        position: 'absolute', bottom: 0, left: 0, right: 0, padding: 12, backgroundColor: 'rgba(0,0,0,0.35)',
     },
     miniBannerLabel: {
-        color: 'white', fontSize: 13, fontWeight: '800', textAlign: 'center',
+        color: 'white', fontSize: 13, fontWeight: '800', textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2,
     },
     searchResultsWrapper: {
         position: 'absolute', top: 180, left: 20, right: 20, zIndex: 200,
@@ -524,10 +547,10 @@ const styles = StyleSheet.create({
         color: '#1d4ed8', fontWeight: '800',
     },
     sectionHeader: {
-        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, marginBottom: 16, marginTop: 16,
+        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, marginBottom: 16, marginTop: 24,
     },
     sectionTitle: {
-        fontSize: 20, fontWeight: '800', color: '#0f172a',
+        fontSize: 22, fontWeight: '900', color: '#0f172a', letterSpacing: -0.5,
     },
     seeAll: {
         color: '#1d4ed8', fontWeight: '700', fontSize: 14,
