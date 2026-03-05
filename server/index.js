@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 const db = require('./db');
 
@@ -8,6 +9,9 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from the client/dist directory
+app.use(express.static(path.join(__dirname, '../client/dist')));
 
 // Basic health check
 app.get('/health', (req, res) => {
@@ -34,6 +38,11 @@ app.use('/api/news', newsRoutes);
 app.use('/api/contacts', contactsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/orders', ordersRoutes);
+
+// Catch-all route to serve the frontend for any non-API requests (SPA routing)
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+});
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
