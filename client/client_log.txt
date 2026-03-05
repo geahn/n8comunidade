@@ -1,0 +1,88 @@
+
+> client@1.0.0 web
+> expo start --web
+
+Starting project at C:\git\n8\client
+Starting Metro Bundler
+
+The following packages should be updated for best compatibility with the installed expo version:
+  @react-native-async-storage/async-storage@3.0.1 - expected version: 2.2.0
+  expo-image-picker@55.0.10 - expected version: ~55.0.11
+  react-native-reanimated@4.2.2 - expected version: 4.2.1
+  react-native-safe-area-context@5.7.0 - expected version: ~5.6.2
+  react-native-screens@4.24.0 - expected version: ~4.23.0
+Your project may not work correctly until you install the expected versions of the packages.
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+Web Bundling failed 1421ms index.ts (2352 modules)
+ ERROR  SyntaxError: C:\git\n8\client\src\screens\ProfileScreen.tsx: Expected corresponding JSX closing tag for <View>. (165:28)
+
+  163 |                             <View style={[styles.menuIcon, { backgroundColor: '#f1f5f9' }]}>
+  164 |                                 <HelpCircle size={20} color="#475569" />
+> 165 |                             </TouchableOpacity>
+      |                             ^
+  166 |                             <Text style={styles.menuLabel}>Ajuda</Text>
+  167 |                             <ChevronRight size={18} color="#cbd5e1" />
+  168 |                         </TouchableOpacity>
+    at constructor (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:365:19)
+    at TypeScriptParserMixin.raise (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:6599:19)
+    at TypeScriptParserMixin.jsxParseElementAt (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:4727:16)
+    at TypeScriptParserMixin.jsxParseElementAt (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:4698:32)
+    at TypeScriptParserMixin.jsxParseElementAt (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:4698:32)
+    at TypeScriptParserMixin.jsxParseElementAt (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:4698:32)
+    at TypeScriptParserMixin.jsxParseElementAt (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:4698:32)
+    at TypeScriptParserMixin.jsxParseElementAt (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:4698:32)
+    at TypeScriptParserMixin.jsxParseElement (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:4749:17)
+    at TypeScriptParserMixin.parseExprAtom (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:4759:19)
+    at TypeScriptParserMixin.parseExprSubscripts (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:11081:23)
+    at TypeScriptParserMixin.parseUpdate (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:11066:21)
+    at TypeScriptParserMixin.parseMaybeUnary (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:11046:23)
+    at TypeScriptParserMixin.parseMaybeUnary (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:9837:18)
+    at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:10899:61)
+    at TypeScriptParserMixin.parseExprOps (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:10904:23)
+    at TypeScriptParserMixin.parseMaybeConditional (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:10881:23)
+    at TypeScriptParserMixin.parseMaybeAssign (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:10831:21)
+    at C:\git\n8\client\node_modules\@babel\parser\lib\index.js:9775:39
+    at TypeScriptParserMixin.tryParse (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:6907:20)
+    at TypeScriptParserMixin.parseMaybeAssign (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:9775:18)
+    at C:\git\n8\client\node_modules\@babel\parser\lib\index.js:10800:39
+    at TypeScriptParserMixin.allowInAnd (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:12426:12)
+    at TypeScriptParserMixin.parseMaybeAssignAllowIn (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:10800:17)
+    at TypeScriptParserMixin.parseMaybeAssignAllowInOrVoidPattern (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:12493:17)
+    at TypeScriptParserMixin.parseParenAndDistinguishExpression (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:11675:28)
+    at TypeScriptParserMixin.parseExprAtom (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:11331:23)
+    at TypeScriptParserMixin.parseExprAtom (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:4764:20)
+    at TypeScriptParserMixin.parseExprSubscripts (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:11081:23)
+    at TypeScriptParserMixin.parseUpdate (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:11066:21)
+    at TypeScriptParserMixin.parseMaybeUnary (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:11046:23)
+    at TypeScriptParserMixin.parseMaybeUnary (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:9837:18)
+    at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:10899:61)
+    at TypeScriptParserMixin.parseExprOps (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:10904:23)
+    at TypeScriptParserMixin.parseMaybeConditional (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:10881:23)
+    at TypeScriptParserMixin.parseMaybeAssign (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:10831:21)
+    at TypeScriptParserMixin.parseMaybeAssign (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:9786:20)
+    at TypeScriptParserMixin.parseExpressionBase (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:10784:23)
+    at C:\git\n8\client\node_modules\@babel\parser\lib\index.js:10780:39
+    at TypeScriptParserMixin.allowInAnd (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:12421:16)
+    at TypeScriptParserMixin.parseExpression (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:10780:17)
+    at TypeScriptParserMixin.parseReturnStatement (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:13142:28)
+    at TypeScriptParserMixin.parseStatementContent (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:12798:21)
+    at TypeScriptParserMixin.parseStatementContent (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:9508:18)
+    at TypeScriptParserMixin.parseStatementLike (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:12767:17)
+    at TypeScriptParserMixin.parseStatementListItem (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:12747:17)
+    at TypeScriptParserMixin.parseBlockOrModuleBlockBody (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:13316:61)
+    at TypeScriptParserMixin.parseBlockBody (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:13309:10)
+    at TypeScriptParserMixin.parseBlock (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:13297:10)
+    at TypeScriptParserMixin.parseFunctionBody (C:\git\n8\client\node_modules\@babel\parser\lib\index.js:12100:24)
+Web .\index.ts ÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæ  0.0% (0/1)
+Web Bundled 1274ms index.ts (2409 modules)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæ  0.0% (0/1)
+Web Bundled 60ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæ  0.0% (0/1)
+Web Bundled 81ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web .\index.ts ÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæ  0.0% (0/1)
+Web Bundled 70ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
