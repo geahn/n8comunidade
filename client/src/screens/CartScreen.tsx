@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet, Alert, Modal, TextInput, ActivityIndicator, Dimensions } from 'react-native';
 import { ArrowLeft, Trash2, ShoppingCart, ArrowRight, MapPin, ChevronRight, Plus, X, Home, Briefcase, Map, Search, ShoppingBag, CreditCard, Banknote } from 'lucide-react-native';
-import { useCart } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { API_URL } from '../api';
