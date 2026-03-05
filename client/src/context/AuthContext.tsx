@@ -5,13 +5,7 @@ import { API_URL } from '../api';
 const AuthContext = createContext<any>(null);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-    const [user, setUser] = useState<any>({
-        id: '1',
-        email: 'admin@teste.com',
-        full_name: 'Admin Teste',
-        role: 'global_admin',
-        avatar_url: null
-    });
+    const [user, setUser] = useState<any>(null);
     const [token, setToken] = useState(null);
     const [loading, setLoading] = useState(true);
     const [selectedNeighborhood, setSelectedNeighborhood] = useState(null);

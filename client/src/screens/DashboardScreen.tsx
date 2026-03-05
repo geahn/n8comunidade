@@ -329,7 +329,11 @@ export default function DashboardScreen({ navigation }: any) {
                             </View>
                         </TouchableOpacity>
                     )) : (
-                        <ActivityIndicator color="#1d4ed8" style={{ padding: 40 }} />
+                        loading ? (
+                            <ActivityIndicator color="#1d4ed8" style={{ padding: 40 }} />
+                        ) : (
+                            <View style={[styles.emptyCard, { width: width - 40 }]}><Text style={styles.emptyText}>Nenhuma loja encontrada neste bairro.</Text></View>
+                        )
                     )}
                 </ScrollView>
 

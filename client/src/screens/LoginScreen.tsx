@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity, ActivityIndicator,
-    KeyboardAvoidingView, Platform, StyleSheet, Image, Dimensions, StatusBar
+    KeyboardAvoidingView, Platform, StyleSheet, Image, Dimensions, StatusBar, ScrollView
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react-native';
@@ -30,7 +30,7 @@ export default function LoginScreen() {
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="dark-content" transparent backgroundColor="transparent" />
+            <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
 
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
