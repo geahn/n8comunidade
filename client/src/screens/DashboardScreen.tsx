@@ -201,7 +201,7 @@ export default function DashboardScreen({ navigation }: any) {
         <View style={{ flex: 1, backgroundColor: '#f8fafc' }}>
             <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
 
-            {/* ─── Simplified Header ─── */}
+            {/* ─── Persistent Header (Fixed) ─── */}
             <View style={styles.headerSimple}>
                 <View style={styles.headerLeft}>
                     <TouchableOpacity onPress={() => navigation.navigate('Profile')} style={styles.avatarMini}>
@@ -215,31 +215,16 @@ export default function DashboardScreen({ navigation }: any) {
                         <Text style={styles.locText} numberOfLines={1}>
                             {selectedNeighborhood?.name || 'Pontakayana'}
                         </Text>
-                        <ChevronDown size={14} color="#1E88E5" strokeWidth={3} />
+                        <ChevronDown size={14} color="white" strokeWidth={3} />
                     </TouchableOpacity>
                 </View>
 
                 <TouchableOpacity onPress={() => navigation.navigate('Cart')} style={styles.cartBtn}>
-                    <ShoppingBag size={22} color="#1E88E5" />
+                    <ShoppingBag size={22} color="white" />
                     <View style={styles.cartBadge}>
                         <Text style={styles.cartBadgeText}>3</Text>
                     </View>
                 </TouchableOpacity>
-            </View>
-
-            {/* ─── Persistent Search Bar ─── */}
-            <View style={styles.searchWrap}>
-                <View style={styles.searchBox}>
-                    <Search size={18} color="#717182" />
-                    <TextInput
-                        placeholder="Buscar no bairro..."
-                        placeholderTextColor="#717182"
-                        style={styles.searchInputRef}
-                        value={searchQuery}
-                        onChangeText={handleSearch}
-                    />
-                    {isSearching && <ActivityIndicator size="small" color="#1E88E5" />}
-                </View>
             </View>
 
             {/* ─── Content ─── */}
@@ -248,23 +233,7 @@ export default function DashboardScreen({ navigation }: any) {
                 contentContainerStyle={{ paddingBottom: 140 }}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1E88E5" />}
             >
-                {/* Search Bar - Reference Layout */}
-                <View style={{ paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#ffffff', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}>
-                    <View style={{ backgroundColor: '#f1f5f9', borderRadius: 12, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, height: 48 }}>
-                        <Search size={20} color="#94a3b8" />
-                        <TextInput
-                            placeholder="Buscar no bairro..."
-                            placeholderTextColor="#94a3b8"
-                            style={{ flex: 1, marginLeft: 10, color: '#1e293b', fontSize: 15 }}
-                            value={searchQuery}
-                            onChangeText={handleSearch}
-                            onFocus={() => searchQuery.length > 2 && setSearchVisible(true)}
-                        />
-                        {isSearching && <ActivityIndicator size="small" color="#1d4ed8" style={{ marginLeft: 8 }} />}
-                    </View>
-                </View>
-
-                {/* Banner Carousel */}
+                {/* 1. Banner Carousel - TOP */}
                 <ScrollView
                     ref={bannerScrollRef}
                     horizontal
@@ -272,21 +241,37 @@ export default function DashboardScreen({ navigation }: any) {
                     showsHorizontalScrollIndicator={false}
                     style={{ marginTop: 0 }}
                 >
-                    {getDynamicBanners(selectedNeighborhood?.id).map((b: any) => (
+                    {getDynamicBanners(selectedNeighborhood?.id || 1).map((b: any) => (
                         <TouchableOpacity key={b.id} style={{ width, aspectRatio: 16 / 9 }} activeOpacity={0.9} onPress={() => {
                             if (b.action?.type === 'screen') navigation.navigate(b.action.target, b.action.params);
                         }}>
                             <Image source={{ uri: b.image_url }} style={{ width: '100%', height: '100%' }} />
                             <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '60%', justifyContent: 'flex-end', padding: 20 }}>
-                                <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.5)', borderTopColor: 'transparent', height: '150%', bottom: -20, top: undefined }]} />
-                                <Text style={{ color: '#ffffff', fontSize: 24, fontWeight: 'bold', zIndex: 1 }}>{b.title}</Text>
-                                <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 16, marginTop: 4, zIndex: 1 }}>{b.subtitle}</Text>
+                                <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.4)', borderTopColor: 'transparent', height: '150%', bottom: 0, top: undefined }]} />
+                                <Text style={{ color: '#ffffff', fontSize: 24, fontWeight: '900', zIndex: 1 }}>{b.title}</Text>
+                                <Text style={{ color: 'rgba(255,255,255,0.95)', fontSize: 16, marginTop: 4, zIndex: 1, fontWeight: '600' }}>{b.subtitle}</Text>
                             </View>
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
 
-                {/* Mini Categories (Categories Replacement) */}
+                {/* 2. Search Bar - Below Banner */}
+                <View style={styles.mainSearchContainer}>
+                    <View style={styles.mainSearchBox}>
+                        <Search size={20} color="#94a3b8" />
+                        <TextInput
+                            placeholder="Buscar no bairro..."
+                            placeholderTextColor="#94a3b8"
+                            style={styles.mainSearchInput}
+                            value={searchQuery}
+                            onChangeText={handleSearch}
+                            onFocus={() => searchQuery.length > 2 && setSearchVisible(true)}
+                        />
+                        {isSearching && <ActivityIndicator size="small" color="#1E88E5" style={{ marginLeft: 8 }} />}
+                    </View>
+                </View>
+
+                {/* 3. Category Grid - Below Search */}
                 <View style={{ paddingHorizontal: 16, paddingVertical: 16 }}>
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
                         {(data.banners && data.banners.length > 0 ? data.banners.slice(0, 4) : QUICK_ACTIONS).map((item: any) => (
@@ -297,10 +282,10 @@ export default function DashboardScreen({ navigation }: any) {
                                         navigation.navigate(item.action_target || item.action?.target);
                                     } else if (item.tab) navigation.navigate(item.tab);
                                 }}
-                                style={{ width: (width - 32 - 24) / 4, backgroundColor: '#ffffff', borderRadius: 16, padding: 8, alignItems: 'center', borderColor: '#f1f5f9', borderWidth: 1 }}
+                                style={{ width: (width - 32 - 24) / 4, backgroundColor: '#ffffff', borderRadius: 20, padding: 8, alignItems: 'center', borderColor: '#f1f5f9', borderWidth: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, elevation: 1 }}
                                 activeOpacity={0.8}
                             >
-                                <View style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: '#f8fafc', alignItems: 'center', justifyContent: 'center', marginBottom: 6 }}>
+                                <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: '#f8fafc', alignItems: 'center', justifyContent: 'center', marginBottom: 6 }}>
                                     <Text style={{ fontSize: 24 }}>{item.emoji || '✨'}</Text>
                                 </View>
                                 <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#334155', textAlign: 'center' }} numberOfLines={1}>
@@ -308,6 +293,26 @@ export default function DashboardScreen({ navigation }: any) {
                                 </Text>
                             </TouchableOpacity>
                         ))}
+                    </View>
+                </View>
+
+                {/* 4. Stats Summary Card */}
+                <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+                    <View style={styles.statsCard}>
+                        <View style={styles.statItem}>
+                            <Text style={styles.statVal}>25</Text>
+                            <Text style={styles.statLabel}>Lojas</Text>
+                        </View>
+                        <View style={styles.statDivider} />
+                        <View style={styles.statItem}>
+                            <Text style={styles.statVal}>53</Text>
+                            <Text style={styles.statLabel}>Anúncios</Text>
+                        </View>
+                        <View style={styles.statDivider} />
+                        <View style={styles.statItem}>
+                            <Text style={styles.statVal}>301</Text>
+                            <Text style={styles.statLabel}>Vizinhança</Text>
+                        </View>
                     </View>
                 </View>
 
@@ -521,7 +526,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingTop: 50,
         paddingBottom: 15,
-        backgroundColor: '#f8fafc',
+        backgroundColor: '#1E88E5',
     },
     headerLeft: {
         flexDirection: 'row',
@@ -532,7 +537,7 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: 12,
-        backgroundColor: '#1E88E5',
+        backgroundColor: 'rgba(255,255,255,0.2)',
         justifyContent: 'center',
         alignItems: 'center',
         overflow: 'hidden',
@@ -554,13 +559,13 @@ const styles = StyleSheet.create({
     locText: {
         fontSize: 18,
         fontWeight: '900',
-        color: '#0f172a',
+        color: 'white',
     },
     cartBtn: {
         width: 40,
         height: 40,
         borderRadius: 12,
-        backgroundColor: 'rgba(30, 136, 229, 0.1)',
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -575,38 +580,33 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 2,
-        borderColor: '#f8fafc',
+        borderColor: '#1E88E5',
     },
     cartBadgeText: {
         color: 'white',
         fontSize: 8,
         fontWeight: 'bold',
     },
-    searchWrap: {
-        paddingHorizontal: 20,
-        paddingBottom: 10,
-        backgroundColor: '#f8fafc',
+    mainSearchContainer: {
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: '#ffffff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#f1f5f9',
     },
-    searchBox: {
+    mainSearchBox: {
+        backgroundColor: '#f1f5f9',
+        borderRadius: 24,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'white',
-        borderRadius: 16,
         paddingHorizontal: 16,
         height: 52,
-        borderWidth: 1,
-        borderColor: '#e2e8f0',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
-        elevation: 2,
     },
-    searchInputRef: {
+    mainSearchInput: {
         flex: 1,
         marginLeft: 10,
-        fontSize: 15,
         color: '#1e293b',
+        fontSize: 15,
         fontWeight: '500',
     },
     header: {
@@ -813,6 +813,40 @@ const styles = StyleSheet.create({
         fontWeight: '900',
         color: '#0f172a',
         marginBottom: 24,
+    },
+    statsCard: {
+        flexDirection: 'row',
+        backgroundColor: 'white',
+        borderRadius: 24,
+        padding: 20,
+        borderWidth: 1,
+        borderColor: '#f1f5f9',
+        justifyContent: 'space-between',
+        shadowColor: '#000',
+        shadowOpacity: 0.03,
+        shadowRadius: 10,
+        elevation: 1,
+    },
+    statItem: {
+        flex: 1,
+        alignItems: 'center',
+    },
+    statVal: {
+        fontSize: 18,
+        fontWeight: '900',
+        color: '#1E88E5',
+    },
+    statLabel: {
+        fontSize: 12,
+        color: '#64748b',
+        marginTop: 2,
+        fontWeight: '600',
+    },
+    statDivider: {
+        width: 1,
+        height: '60%',
+        backgroundColor: '#f1f5f9',
+        alignSelf: 'center',
     },
     actionItem: {
         flexDirection: 'row',

@@ -32,9 +32,7 @@ const FloatingNav: React.FC<FloatingNavProps> = ({ activeTab, onTabPress, onPlus
                                 style={styles.plusButton}
                                 activeOpacity={0.8}
                             >
-                                <View style={styles.plusinner}>
-                                    <Plus size={28} color="white" />
-                                </View>
+                                <Plus size={28} color="white" />
                             </TouchableOpacity>
                         );
                     }
@@ -112,16 +110,14 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
     plusButton: {
-        top: -20,
-        zIndex: 1001,
-    },
-    plusinner: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
+        width: 64,
+        height: 64,
+        borderRadius: 32,
         backgroundColor: '#1E88E5',
-        alignItems: 'center',
         justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: -32, // Adjust this value to control vertical position
+        zIndex: 1001,
         ...Platform.select({
             ios: {
                 shadowColor: '#1E88E5',
