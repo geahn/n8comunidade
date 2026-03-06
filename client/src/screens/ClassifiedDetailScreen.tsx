@@ -37,7 +37,7 @@ export default function ClassifiedDetailScreen({ route, navigation }: any) {
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="dark-content" transparent backgroundColor="transparent" />
+            <StatusBar barStyle="dark-content" translucent={true} backgroundColor="transparent" />
 
             {/* Custom Transparent Header */}
             <View style={styles.header}>

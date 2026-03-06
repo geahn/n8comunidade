@@ -10,8 +10,8 @@ import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../api';
 
 const { width } = Dimensions.get('window');
-const HEADER_FULL_H = 190;
-const HEADER_MINI_H = 100;
+const HEADER_FULL_H = 110;
+const HEADER_MINI_H = 88;
 const SCROLL_DIST = HEADER_FULL_H - HEADER_MINI_H;
 
 const isDesktop = width >= 1024;
@@ -204,59 +204,34 @@ export default function DashboardScreen({ navigation }: any) {
 
                 <View style={styles.headerContent}>
                     <View style={styles.headerTop}>
-                        {/* Neighborhood Picker */}
-                        <TouchableOpacity onPress={() => setNeighborhoodModal(true)} style={styles.locationSelector}>
-                            <View style={styles.mapIconCircle}>
-                                <MapPin size={14} color="#ffffff" />
-                            </View>
-                            <View>
-                                <Text style={styles.locationLabel}>Bairro atual</Text>
-                                <View style={styles.locationContainer}>
-                                    <View style={{ flexShrink: 1 }}>
-                                        <Text style={styles.locationName} numberOfLines={1}>{selectedNeighborhood?.name || 'Selecione...'}</Text>
-                                    </View>
-                                    <ChevronDown size={14} color="#ffffff" opacity={0.8} />
-                                </View>
-                            </View>
-                        </TouchableOpacity>
-
-                        {/* User Actions */}
-                        <View style={styles.userActions}>
-                            <TouchableOpacity style={[styles.actionButton, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
-                                <Bell size={20} color="#ffffff" />
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={() => navigation.navigate('Profile')} style={[styles.avatarButton, { borderColor: 'rgba(255,255,255,0.3)', borderWidth: 1 }]}>
+                        {/* Header Left: Avatar & Neighborhood */}
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+                            <TouchableOpacity onPress={() => navigation.navigate('Profile')} style={[styles.avatarButton, { borderColor: 'rgba(255,255,255,0.3)', borderWidth: 2, width: 40, height: 40, borderRadius: 20 }]}>
                                 {user?.avatar_url ? (
                                     <Image source={{ uri: user.avatar_url }} style={styles.avatar} />
                                 ) : (
                                     <Text style={styles.avatarText}>{initials}</Text>
                                 )}
                             </TouchableOpacity>
+
+                            <TouchableOpacity onPress={() => setNeighborhoodModal(true)} style={styles.locationContainer}>
+                                <Text style={[styles.locationName, { fontSize: 20, fontWeight: 'bold' }]} numberOfLines={1}>
+                                    {selectedNeighborhood?.name || 'Pontakayana'}
+                                </Text>
+                                <ChevronDown size={20} color="#ffffff" />
+                            </TouchableOpacity>
                         </View>
+
+                        {/* User Actions: Cart */}
+                        <TouchableOpacity onPress={() => navigation.navigate('Cart')} style={{ position: 'relative', width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
+                            <ShoppingBag size={24} color="#ffffff" />
+                            <View style={{ position: 'absolute', top: -2, right: -2, backgroundColor: '#ef4444', borderRadius: 10, width: 20, height: 20, alignItems: 'center', justifyContent: 'center' }}>
+                                <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>3</Text>
+                            </View>
+                        </TouchableOpacity>
                     </View>
 
-                    {/* Search Bar - Hidden on scroll */}
-                    <Animated.View style={[
-                        styles.searchContainer,
-                        {
-                            opacity: searchOpacity,
-                            transform: [{ scale: searchScale }],
-                            height: searchHeight,
-                            marginTop: scrollY.interpolate({ inputRange: [0, 50], outputRange: [0, -20], extrapolate: 'clamp' }),
-                            overflow: 'hidden'
-                        }
-                    ]}>
-                        <Search size={18} color="#94a3b8" />
-                        <TextInput
-                            placeholder="O que você precisa hoje?"
-                            placeholderTextColor="#94a3b8"
-                            style={styles.searchInput}
-                            value={searchQuery}
-                            onChangeText={handleSearch}
-                            onFocus={() => searchQuery.length > 2 && setSearchVisible(true)}
-                        />
-                        {isSearching && <ActivityIndicator size="small" color="#1d4ed8" style={{ marginLeft: 8 }} />}
-                    </Animated.View>
+                    {/* Removed Search Bar from header to match reference layout */}
                 </View>
 
                 {/* Unified Search Results Overlay */}
@@ -303,143 +278,179 @@ export default function DashboardScreen({ navigation }: any) {
             <Animated.ScrollView
                 scrollEventThrottle={16}
                 onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false })}
-                contentContainerStyle={{ paddingTop: HEADER_FULL_H + 10, paddingBottom: 120 }}
+                contentContainerStyle={{ paddingTop: HEADER_FULL_H, paddingBottom: 120 }}
                 showsVerticalScrollIndicator={false}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1d4ed8" />}
             >
+                {/* Search Bar - Reference Layout */}
+                <View style={{ paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#ffffff', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}>
+                    <View style={{ backgroundColor: '#f1f5f9', borderRadius: 12, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, height: 48 }}>
+                        <Search size={20} color="#94a3b8" />
+                        <TextInput
+                            placeholder="Buscar no bairro..."
+                            placeholderTextColor="#94a3b8"
+                            style={{ flex: 1, marginLeft: 10, color: '#1e293b', fontSize: 15 }}
+                            value={searchQuery}
+                            onChangeText={handleSearch}
+                            onFocus={() => searchQuery.length > 2 && setSearchVisible(true)}
+                        />
+                        {isSearching && <ActivityIndicator size="small" color="#1d4ed8" style={{ marginLeft: 8 }} />}
+                    </View>
+                </View>
+
                 {/* Banner Carousel */}
                 <ScrollView
                     ref={bannerScrollRef}
                     horizontal
                     pagingEnabled
                     showsHorizontalScrollIndicator={false}
-                    style={styles.bannerContainer}
-                    contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
+                    style={{ marginTop: 0 }}
                 >
                     {getDynamicBanners(selectedNeighborhood?.id).map((b: any) => (
-                        <TouchableOpacity key={b.id} style={styles.bannerItem} activeOpacity={0.9} onPress={() => {
+                        <TouchableOpacity key={b.id} style={{ width, aspectRatio: 16/9 }} activeOpacity={0.9} onPress={() => {
                             if (b.action?.type === 'screen') navigation.navigate(b.action.target, b.action.params);
                         }}>
-                            <Image source={{ uri: b.image_url }} style={styles.bannerImage} />
-                            <View style={styles.bannerOverlay}>
-                                <Text style={styles.bannerTitle}>{b.title}</Text>
-                                <Text style={styles.bannerSubtitle}>{b.subtitle}</Text>
+                            <Image source={{ uri: b.image_url }} style={{ width: '100%', height: '100%' }} />
+                            <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '60%', justifyContent: 'flex-end', padding: 20 }}>
+                                <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.5)', borderTopColor: 'transparent', height: '150%', bottom: -20, top: undefined }]} />
+                                <Text style={{ color: '#ffffff', fontSize: 24, fontWeight: 'bold', zIndex: 1 }}>{b.title}</Text>
+                                <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 16, marginTop: 4, zIndex: 1 }}>{b.subtitle}</Text>
                             </View>
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
 
-                {/* Mini Banners (Categories Replacement) */}
-                <View style={[styles.sectionHeader, { marginTop: 10 }]}>
-                    <Text style={styles.sectionTitle}>O que deseja hoje?</Text>
-                </View>
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ paddingHorizontal: 20, gap: 12, paddingBottom: 10 }}
-                >
-                    {(data.banners && data.banners.length > 0 ? data.banners : QUICK_ACTIONS).map((item: any) => (
-                        <TouchableOpacity
-                            key={item.id || item.label}
-                            onPress={() => {
-                                if (item.action_type === 'screen' || item.action?.type === 'screen') {
-                                    navigation.navigate(item.action_target || item.action?.target);
-                                } else if (item.tab) navigation.navigate(item.tab);
-                            }}
-                            style={styles.miniBannerItem}
-                            activeOpacity={0.8}
-                        >
-                            <View style={styles.miniBannerContent}>
-                                <Text style={styles.miniBannerLabel} numberOfLines={2}>{item.title || item.label}</Text>
-                                {(item.subtitle || item.desc) && (
-                                    <Text style={styles.miniBannerDesc} numberOfLines={1}>{item.subtitle || item.desc}</Text>
-                                )}
-                            </View>
-
-                            <View style={styles.miniBannerIconContainer}>
-                                {item.image_url ? (
-                                    <Image
-                                        source={{ uri: item.image_url }}
-                                        style={styles.miniBannerIcon}
-                                    />
-                                ) : (
-                                    <Text style={styles.miniBannerEmoji}>{item.emoji || '✨'}</Text>
-                                )}
-                            </View>
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
-
-                {/* Section: Shops (iFood Style) */}
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Lojas no bairro</Text>
-                    <TouchableOpacity onPress={() => navigation.navigate('Lojas')}>
-                        <Text style={styles.seeAll}>Ver todas</Text>
-                    </TouchableOpacity>
-                </View>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 16 }}>
-                    {data.shops.length > 0 ? data.shops.map((shop: any) => (
-                        <TouchableOpacity key={shop.id} onPress={() => navigation.navigate('ShopDetail', { shop })} style={styles.shopCard}>
-                            <Image source={{ uri: shop.cover_url || 'https://via.placeholder.com/150' }} style={styles.shopImage} />
-                            <View style={styles.shopContent}>
-                                <Text style={styles.shopName} numberOfLines={1}>{shop.name}</Text>
-                                <View style={styles.shopStats}>
-                                    <Text style={styles.shopRating}>⭐ {shop.rating || 'N/A'}</Text>
-                                    <Text style={styles.shopDistance}>• 1.2km</Text>
+                {/* Mini Categories (Categories Replacement) */}
+                <View style={{ paddingHorizontal: 16, paddingVertical: 16 }}>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+                        {(data.banners && data.banners.length > 0 ? data.banners.slice(0, 4) : QUICK_ACTIONS).map((item: any) => (
+                            <TouchableOpacity
+                                key={item.id || item.label}
+                                onPress={() => {
+                                    if (item.action_type === 'screen' || item.action?.type === 'screen') {
+                                        navigation.navigate(item.action_target || item.action?.target);
+                                    } else if (item.tab) navigation.navigate(item.tab);
+                                }}
+                                style={{ width: (width - 32 - 24) / 4, backgroundColor: '#ffffff', borderRadius: 16, padding: 8, alignItems: 'center', borderColor: '#f1f5f9', borderWidth: 1 }}
+                                activeOpacity={0.8}
+                            >
+                                <View style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: '#f8fafc', alignItems: 'center', justifyContent: 'center', marginBottom: 6 }}>
+                                    <Text style={{ fontSize: 24 }}>{item.emoji || '✨'}</Text>
                                 </View>
-                            </View>
-                        </TouchableOpacity>
-                    )) : (
-                        loading ? (
-                            <ActivityIndicator color="#1d4ed8" style={{ padding: 40 }} />
-                        ) : (
-                            <View style={[styles.emptyCard, { width: width - 40 }]}><Text style={styles.emptyText}>Nenhuma loja encontrada neste bairro.</Text></View>
-                        )
-                    )}
-                </ScrollView>
+                                <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#334155', textAlign: 'center' }} numberOfLines={1}>
+                                    {item.title || item.label}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </View>
 
-                {/* Section: News */}
-                <View style={[styles.sectionHeader, { marginTop: 32 }]}>
-                    <Text style={styles.sectionTitle}>Últimas Notícias</Text>
-                    <TouchableOpacity onPress={() => navigation.navigate('Notícias')}>
-                        <Text style={styles.seeAll}>Ver todas</Text>
+                {/* Section: Shops (Reference Layout) */}
+                <View style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                        <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#0f172a' }}>Lojas em Destaque</Text>
+                        <TouchableOpacity onPress={() => navigation.navigate('Negócios')} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Text style={{ color: '#1E88E5', fontSize: 14, fontWeight: '500' }}>Ver mais</Text>
+                            <ChevronRight size={16} color="#1E88E5" />
+                        </TouchableOpacity>
+                    </View>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}>
+                        {data.shops.length > 0 ? data.shops.map((shop: any) => (
+                            <TouchableOpacity key={shop.id} onPress={() => navigation.navigate('ShopDetail', { shop })} style={{ width: 140, backgroundColor: '#ffffff', borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#e2e8f0' }}>
+                                <View style={{ width: '100%', aspectRatio: 1 }}>
+                                    <Image source={{ uri: shop.cover_url || 'https://images.unsplash.com/photo-1625331725309-83e4f3c1373b?w=400&q=80' }} style={{ width: '100%', height: '100%' }} />
+                                    {/* Mock Badge */}
+                                    <View style={{ position: 'absolute', top: 8, left: 8, backgroundColor: '#1E88E5', paddingHorizontal: 6, paddingVertical: 4, borderRadius: 8 }}>
+                                        <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>Em alta</Text>
+                                    </View>
+                                </View>
+                                <View style={{ padding: 12 }}>
+                                    <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#0f172a', marginBottom: 2 }} numberOfLines={1}>{shop.name}</Text>
+                                    <Text style={{ fontSize: 11, color: '#64748b', marginBottom: 6 }}>{shop.category || 'Loja Local'}</Text>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                        <Text style={{ fontSize: 12, color: '#eab308' }}>★</Text>
+                                        <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#334155' }}>{shop.rating || '4.8'}</Text>
+                                    </View>
+                                </View>
+                            </TouchableOpacity>
+                        )) : (
+                            loading ? (
+                                <ActivityIndicator color="#1d4ed8" style={{ padding: 40 }} />
+                            ) : (
+                                <View style={[styles.emptyCard, { width: width - 32 }]}><Text style={styles.emptyText}>Nenhuma loja encontrada.</Text></View>
+                            )
+                        )}
+                    </ScrollView>
+                </View>
+
+                {/* Section: Classifieds (Reference Layout) */}
+                <View style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                        <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#0f172a' }}>Classificados</Text>
+                        <TouchableOpacity onPress={() => navigation.navigate('Classificados')} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Text style={{ color: '#1E88E5', fontSize: 14, fontWeight: '500' }}>Ver mais</Text>
+                            <ChevronRight size={16} color="#1E88E5" />
+                        </TouchableOpacity>
+                    </View>
+                    <View style={{ gap: 12 }}>
+                        {data.ads.length > 0 ? data.ads.slice(0, 4).map((ad: any) => (
+                            <TouchableOpacity key={ad.id} onPress={() => navigation.navigate('ClassifiedDetail', { ad })} style={{ flexDirection: 'row', backgroundColor: '#ffffff', borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#e2e8f0' }}>
+                                <View style={{ width: 110, height: 110 }}>
+                                    <Image source={{ uri: ad.image_url || 'https://images.unsplash.com/photo-1741061961703-0739f3454314?w=400&q=80' }} style={{ width: '100%', height: '100%' }} />
+                                </View>
+                                <View style={{ flex: 1, padding: 12, justifyContent: 'space-between' }}>
+                                    <View>
+                                        <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#0f172a', marginBottom: 4 }} numberOfLines={1}>{ad.title}</Text>
+                                        <Text style={{ fontSize: 12, color: '#475569', marginBottom: 8 }} numberOfLines={2}>{ad.description || 'Produto em ótimo estado, aproveite esta oportunidade no seu bairro.'}</Text>
+                                    </View>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#1E88E5' }}>R$ {parseFloat(ad.price || 0).toFixed(2)}</Text>
+                                        <Text style={{ fontSize: 12, color: '#1E88E5' }}>Ver mais</Text>
+                                    </View>
+                                </View>
+                            </TouchableOpacity>
+                        )) : (
+                            <Text style={{ textAlign: 'center', color: '#94a3b8', marginTop: 10 }}>Nenhum anúncio disponível.</Text>
+                        )}
+                    </View>
+                </View>
+
+                {/* Donation Banner */}
+                <View style={{ paddingHorizontal: 16, paddingVertical: 16 }}>
+                    <TouchableOpacity onPress={() => navigation.navigate('Social')} style={{ backgroundColor: '#0D47A1', borderRadius: 16, padding: 24 }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <View style={{ flex: 1 }}>
+                                <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold', marginBottom: 4 }}>Ajude Famílias do Bairro</Text>
+                                <Text style={{ color: '#bfdbfe', fontSize: 14 }}>Doe cestas básicas e faça a diferença</Text>
+                            </View>
+                            <ChevronRight size={24} color="white" />
+                        </View>
                     </TouchableOpacity>
                 </View>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 16 }}>
-                    {data.news.length > 0 ? data.news.map((n: any) => (
-                        <TouchableOpacity key={n.id} onPress={() => navigation.navigate('NewsDetail', { news: n })} style={styles.newsCard}>
-                            <Image source={{ uri: n.image_url || 'https://via.placeholder.com/300' }} style={styles.newsImage} />
-                            <View style={styles.newsContent}>
-                                <Text style={styles.newsDate}>{new Date(n.created_at).toLocaleDateString()}</Text>
-                                <Text style={styles.newsTitle} numberOfLines={2}>{n.title}</Text>
-                            </View>
-                        </TouchableOpacity>
-                    )) : (
-                        <View style={styles.emptyCard}><Text style={styles.emptyText}>Sem notícias no momento</Text></View>
-                    )}
-                </ScrollView>
 
-                {/* Section: Classifieds (OLX Style) */}
-                <View style={[styles.sectionHeader, { marginTop: 32 }]}>
-                    <Text style={styles.sectionTitle}>Classificados recentes</Text>
-                    <TouchableOpacity onPress={() => navigation.navigate('Classificados')}>
-                        <Text style={styles.seeAll}>Ver todos</Text>
-                    </TouchableOpacity>
-                </View>
-                <View style={{ paddingHorizontal: 20 }}>
-                    {data.ads.length > 0 ? data.ads.slice(0, 4).map((ad: any) => (
-                        <TouchableOpacity key={ad.id} onPress={() => navigation.navigate('ClassifiedDetail', { ad })} style={styles.adCard}>
-                            <Image source={{ uri: ad.image_url || 'https://via.placeholder.com/100' }} style={styles.adImage} />
-                            <View style={styles.adContent}>
-                                <Text style={styles.adTitle} numberOfLines={1}>{ad.title}</Text>
-                                <Text style={styles.adCategory}>{ad.category}</Text>
-                                <Text style={styles.adPrice}>R$ {parseFloat(ad.price).toFixed(2)}</Text>
-                            </View>
-                            <ChevronRight size={18} color="#cbd5e1" />
+                {/* Section: News (Reference Layout) */}
+                <View style={{ paddingHorizontal: 16, paddingVertical: 16, paddingBottom: 24 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                        <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#0f172a' }}>Notícias</Text>
+                        <TouchableOpacity onPress={() => navigation.navigate('Notícias')} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Text style={{ color: '#1E88E5', fontSize: 14, fontWeight: '500' }}>Ver mais</Text>
+                            <ChevronRight size={16} color="#1E88E5" />
                         </TouchableOpacity>
-                    )) : (
-                        <Text style={{ textAlign: 'center', color: '#94a3b8', marginTop: 20 }}>Nenhum anúncio disponível.</Text>
-                    )}
+                    </View>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+                        {data.news.length > 0 ? data.news.slice(0,4).map((n: any) => (
+                            <TouchableOpacity key={n.id} onPress={() => navigation.navigate('NewsDetail', { news: n })} style={{ width: (width - 32 - 12) / 2, backgroundColor: '#ffffff', borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#e2e8f0', marginBottom: 12 }}>
+                                <View style={{ width: '100%', aspectRatio: 16/9 }}>
+                                    <Image source={{ uri: n.image_url || 'https://via.placeholder.com/300' }} style={{ width: '100%', height: '100%' }} />
+                                </View>
+                                <View style={{ padding: 12 }}>
+                                    <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#0f172a' }} numberOfLines={2}>{n.title}</Text>
+                                </View>
+                            </TouchableOpacity>
+                        )) : (
+                            <View style={[styles.emptyCard, { width: width - 32 }]}><Text style={styles.emptyText}>Sem notícias no momento</Text></View>
+                        )}
+                    </View>
                 </View>
             </Animated.ScrollView>
 

@@ -3,7 +3,7 @@ import { View, TouchableOpacity, Text, Platform, StyleSheet, Dimensions } from '
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
-import { Home, LayoutGrid, Users, Newspaper, ShoppingBag, Plus } from 'lucide-react-native';
+import { Home, Store, Heart, Newspaper, ShoppingBag, Plus, LayoutGrid, Users } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 import { BlurView } from 'expo-blur';
 
@@ -62,67 +62,69 @@ function MainTabBar() {
         <>
             <Tab.Navigator
                 screenOptions={{
-                    tabBarActiveTintColor: '#ffffff',
-                    tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.6)',
+                    tabBarActiveTintColor: '#1E88E5',
+                    tabBarInactiveTintColor: '#6b7280',
                     headerShown: false,
                     tabBarStyle: {
                         position: 'absolute',
-                        bottom: 24,
+                        bottom: 16,
                         alignSelf: 'center',
-                        width: '90%',
+                        width: '92%',
                         maxWidth: 400,
-                        height: 74,
-                        borderRadius: 37,
-                        backgroundColor: Platform.OS === 'android' ? 'rgba(29, 78, 216, 0.95)' : 'rgba(29, 78, 216, 0.75)', // Blue primary color
+                        height: 64,
+                        borderRadius: 32,
+                        backgroundColor: Platform.OS === 'android' ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.8)',
                         borderTopWidth: 0,
-                        shadowColor: '#1d4ed8', // Colored shadow for extra premium feel
+                        borderColor: 'rgba(255,255,255,0.2)',
+                        borderWidth: 1,
+                        shadowColor: '#000',
                         shadowOffset: { width: 0, height: 10 },
-                        shadowOpacity: 0.3,
+                        shadowOpacity: 0.15,
                         shadowRadius: 20,
                         elevation: 10,
-                        paddingBottom: Platform.OS === 'ios' ? 10 : 8,
-                        paddingTop: 8,
+                        paddingBottom: Platform.OS === 'ios' ? 8 : 6,
+                        paddingTop: 6,
                         left: '50%',
-                        marginLeft: isSmallScreen ? -(windowWidth * 0.45) : -200,
+                        marginLeft: isSmallScreen ? -(windowWidth * 0.46) : -200,
                     },
                     tabBarBackground: () => (
                         Platform.OS !== 'android' ? (
-                            <View style={[StyleSheet.absoluteFill, { borderRadius: 37, overflow: 'hidden' }]}>
+                            <View style={[StyleSheet.absoluteFill, { borderRadius: 32, overflow: 'hidden' }]}>
                                 <BlurView 
                                     tint="light" 
-                                    intensity={60} 
+                                    intensity={80} 
                                     style={StyleSheet.absoluteFill} 
                                 />
                             </View>
                         ) : null
                     ),
-                    tabBarLabelStyle: { fontSize: 10, fontWeight: '700', marginBottom: 6 },
+                    tabBarLabelStyle: { fontSize: 10, fontWeight: '600', marginBottom: 4 },
                 }}
             >
-                <Tab.Screen name="Meu Bairro" component={DashboardScreen}
-                    options={{ tabBarIcon: ({ color }) => <Home size={24} color={color} /> }} />
-                <Tab.Screen name="Classificados" component={ClassifiedsScreen}
-                    options={{ tabBarIcon: ({ color }) => <LayoutGrid size={24} color={color} /> }} />
+                <Tab.Screen name="Bairro" component={DashboardScreen}
+                    options={{ tabBarIcon: ({ color }) => <Home size={22} color={color} strokeWidth={2.5} /> }} />
+                <Tab.Screen name="Negócios" component={ShopsScreen}
+                    options={{ tabBarIcon: ({ color }) => <Store size={22} color={color} strokeWidth={2.5} /> }} />
                 <Tab.Screen name="Publicar" component={() => null}
                     options={{
                         tabBarButton: () => (
                             <TouchableOpacity onPress={() => setPublishVisible(true)}
-                                style={{ top: -16, alignSelf: 'center', alignItems: 'center', justifyContent: 'center', width: 64, height: 64 }}>
+                                style={{ top: -20, alignSelf: 'center', alignItems: 'center', justifyContent: 'center', width: 56, height: 56 }}>
                                 <View style={{
-                                    width: 64, height: 64, borderRadius: 32, backgroundColor: '#ffffff',
+                                    width: 56, height: 56, borderRadius: 28, backgroundColor: '#1E88E5',
                                     alignItems: 'center', justifyContent: 'center',
-                                    shadowColor: '#1d4ed8', shadowOpacity: 0.4, shadowRadius: 10, elevation: 8,
+                                    shadowColor: '#1E88E5', shadowOpacity: 0.4, shadowRadius: 10, elevation: 8,
                                 }}>
-                                    <Plus size={30} color="#1d4ed8" />
+                                    <Plus size={28} color="#ffffff" strokeWidth={3} />
                                 </View>
                             </TouchableOpacity>
                         ),
                         tabBarLabel: () => null,
                     }} />
-                <Tab.Screen name="Lojas" component={ShopsScreen}
-                    options={{ tabBarIcon: ({ color }) => <ShoppingBag size={24} color={color} /> }} />
+                <Tab.Screen name="Social" component={SocialScreen}
+                    options={{ tabBarIcon: ({ color }) => <Heart size={22} color={color} strokeWidth={2.5} /> }} />
                 <Tab.Screen name="Notícias" component={NewsScreen}
-                    options={{ tabBarIcon: ({ color }) => <Newspaper size={24} color={color} /> }} />
+                    options={{ tabBarIcon: ({ color }) => <Newspaper size={22} color={color} strokeWidth={2.5} /> }} />
             </Tab.Navigator>
 
             {/* Publish Modal */}
