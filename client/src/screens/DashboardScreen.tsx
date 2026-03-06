@@ -3,11 +3,13 @@ import {
     View, Text, ScrollView, TouchableOpacity, TextInput,
     ActivityIndicator, Image, Animated, Dimensions, RefreshControl, Modal, StyleSheet, StatusBar
 } from 'react-native';
-import { Bell, Search, MapPin, ChevronDown, ChevronRight, Check, ShoppingBag, LayoutGrid, Newspaper, Heart } from 'lucide-react-native';
+import { Bell, Search, MapPin, ChevronDown, ChevronRight, Check, ShoppingBag, LayoutGrid, Newspaper, Heart, MessageCircle } from 'lucide-react-native';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
 import { API_URL } from '../api';
+import FloatingNav from '../components/FloatingNav';
+import GlassView from '../components/GlassView';
 
 const { width } = Dimensions.get('window');
 const HEADER_FULL_H = 110;
@@ -34,7 +36,7 @@ const getDynamicBanners = (neighborhoodId: string | number | undefined) => {
 
     // Create a deterministic pseudo-random variation based on the neighborhood ID
     const seed = String(neighborhoodId).charCodeAt(0) % 3;
-    
+
     if (seed === 0) {
         return [
             { id: '10', image_url: 'https://images.unsplash.com/photo-1533900298318-6b8da08a523e?w=800&q=80', title: 'Feira Livre Hoje!', subtitle: 'Frutas e verduras frescas', action: { type: 'screen', target: 'Lojas' } },
@@ -70,6 +72,7 @@ export default function DashboardScreen({ navigation }: any) {
     const [refreshing, setRefreshing] = useState(false);
     const [loading, setLoading] = useState(true);
     const [neighborhoodModal, setNeighborhoodModal] = useState(false);
+    const [addContentModal, setAddContentModal] = useState(false);
     const [neighborhoods, setNeighborhoods] = useState<any[]>([]);
     const [bannerIndex, setBannerIndex] = useState(0);
 
@@ -196,91 +199,54 @@ export default function DashboardScreen({ navigation }: any) {
 
     return (
         <View style={{ flex: 1, backgroundColor: '#f8fafc' }}>
-            <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-            {/* ─── Premium Header ─── */}
-            <Animated.View style={[styles.header, { height: headerHeight }]}>
-                {/* Fixed Blue Background */}
-                <View style={[StyleSheet.absoluteFill, { backgroundColor: '#1d4ed8' }]} />
+            <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
 
-                <View style={styles.headerContent}>
-                    <View style={styles.headerTop}>
-                        {/* Header Left: Avatar & Neighborhood */}
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
-                            <TouchableOpacity onPress={() => navigation.navigate('Profile')} style={[styles.avatarButton, { borderColor: 'rgba(255,255,255,0.3)', borderWidth: 2, width: 40, height: 40, borderRadius: 20 }]}>
-                                {user?.avatar_url ? (
-                                    <Image source={{ uri: user.avatar_url }} style={styles.avatar} />
-                                ) : (
-                                    <Text style={styles.avatarText}>{initials}</Text>
-                                )}
-                            </TouchableOpacity>
-
-                            <TouchableOpacity onPress={() => setNeighborhoodModal(true)} style={styles.locationContainer}>
-                                <Text style={[styles.locationName, { fontSize: 20, fontWeight: 'bold' }]} numberOfLines={1}>
-                                    {selectedNeighborhood?.name || 'Pontakayana'}
-                                </Text>
-                                <ChevronDown size={20} color="#ffffff" />
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* User Actions: Cart */}
-                        <TouchableOpacity onPress={() => navigation.navigate('Cart')} style={{ position: 'relative', width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
-                            <ShoppingBag size={24} color="#ffffff" />
-                            <View style={{ position: 'absolute', top: -2, right: -2, backgroundColor: '#ef4444', borderRadius: 10, width: 20, height: 20, alignItems: 'center', justifyContent: 'center' }}>
-                                <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>3</Text>
-                            </View>
-                        </TouchableOpacity>
-                    </View>
-
-                    {/* Removed Search Bar from header to match reference layout */}
+            {/* ─── Simplified Header ─── */}
+            <View style={styles.headerSimple}>
+                <View style={styles.headerLeft}>
+                    <TouchableOpacity onPress={() => navigation.navigate('Profile')} style={styles.avatarMini}>
+                        {user?.avatar_url ? (
+                            <Image source={{ uri: user.avatar_url }} style={styles.avatarImg} />
+                        ) : (
+                            <Text style={styles.avatarLetter}>{initials}</Text>
+                        )}
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setNeighborhoodModal(true)} style={styles.locTrigger}>
+                        <Text style={styles.locText} numberOfLines={1}>
+                            {selectedNeighborhood?.name || 'Pontakayana'}
+                        </Text>
+                        <ChevronDown size={14} color="#1E88E5" strokeWidth={3} />
+                    </TouchableOpacity>
                 </View>
 
-                {/* Unified Search Results Overlay */}
-                {searchVisible && searchResults.length > 0 && (
-                    <View style={styles.searchResultsWrapper}>
-                        <View style={styles.searchResultsContainer}>
-                            <ScrollView style={{ maxHeight: 400 }}>
-                                {searchResults.map((item, idx) => (
-                                    <TouchableOpacity
-                                        key={`${item.type}-${item.id}-${idx}`}
-                                        style={styles.searchResultItem}
-                                        onPress={() => {
-                                            setSearchVisible(false);
-                                            setSearchQuery('');
-                                            if (item.type === 'shop') navigation.navigate('ShopDetail', { shop: item });
-                                            else if (item.type === 'news') navigation.navigate('NewsDetail', { news: item });
-                                            else if (item.type === 'ad') navigation.navigate('ClassifiedDetail', { ad: item });
-                                        }}
-                                    >
-                                        <Image source={{ uri: item.image_url || 'https://via.placeholder.com/50' }} style={styles.searchResultImage} />
-                                        <View style={{ flex: 1, marginLeft: 12 }}>
-                                            <View style={styles.searchResultHeader}>
-                                                <Text style={styles.searchResultTitle} numberOfLines={1}>{item.title}</Text>
-                                                <View style={[styles.badge, (styles as any)[`badge_${item.type}`]]}>
-                                                    <Text style={styles.badgeText}>{item.type.toUpperCase()}</Text>
-                                                </View>
-                                            </View>
-                                            <Text style={styles.searchResultSub} numberOfLines={1}>
-                                                {item.type === 'shop' ? `⭐ ${item.rating || 'N/A'}` : item.type === 'ad' ? `R$ ${item.price}` : 'Ver notícia'}
-                                            </Text>
-                                        </View>
-                                    </TouchableOpacity>
-                                ))}
-                            </ScrollView>
-                            <TouchableOpacity style={styles.closeSearch} onPress={() => setSearchVisible(false)}>
-                                <Text style={styles.closeSearchText}>Fechar</Text>
-                            </TouchableOpacity>
-                        </View>
+                <TouchableOpacity onPress={() => navigation.navigate('Cart')} style={styles.cartBtn}>
+                    <ShoppingBag size={22} color="#1E88E5" />
+                    <View style={styles.cartBadge}>
+                        <Text style={styles.cartBadgeText}>3</Text>
                     </View>
-                )}
-            </Animated.View>
+                </TouchableOpacity>
+            </View>
+
+            {/* ─── Persistent Search Bar ─── */}
+            <View style={styles.searchWrap}>
+                <View style={styles.searchBox}>
+                    <Search size={18} color="#717182" />
+                    <TextInput
+                        placeholder="Buscar no bairro..."
+                        placeholderTextColor="#717182"
+                        style={styles.searchInputRef}
+                        value={searchQuery}
+                        onChangeText={handleSearch}
+                    />
+                    {isSearching && <ActivityIndicator size="small" color="#1E88E5" />}
+                </View>
+            </View>
 
             {/* ─── Content ─── */}
-            <Animated.ScrollView
-                scrollEventThrottle={16}
-                onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false })}
-                contentContainerStyle={{ paddingTop: HEADER_FULL_H, paddingBottom: 120 }}
+            <ScrollView
                 showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1d4ed8" />}
+                contentContainerStyle={{ paddingBottom: 140 }}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1E88E5" />}
             >
                 {/* Search Bar - Reference Layout */}
                 <View style={{ paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#ffffff', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}>
@@ -307,7 +273,7 @@ export default function DashboardScreen({ navigation }: any) {
                     style={{ marginTop: 0 }}
                 >
                     {getDynamicBanners(selectedNeighborhood?.id).map((b: any) => (
-                        <TouchableOpacity key={b.id} style={{ width, aspectRatio: 16/9 }} activeOpacity={0.9} onPress={() => {
+                        <TouchableOpacity key={b.id} style={{ width, aspectRatio: 16 / 9 }} activeOpacity={0.9} onPress={() => {
                             if (b.action?.type === 'screen') navigation.navigate(b.action.target, b.action.params);
                         }}>
                             <Image source={{ uri: b.image_url }} style={{ width: '100%', height: '100%' }} />
@@ -438,9 +404,9 @@ export default function DashboardScreen({ navigation }: any) {
                         </TouchableOpacity>
                     </View>
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-                        {data.news.length > 0 ? data.news.slice(0,4).map((n: any) => (
+                        {data.news.length > 0 ? data.news.slice(0, 4).map((n: any) => (
                             <TouchableOpacity key={n.id} onPress={() => navigation.navigate('NewsDetail', { news: n })} style={{ width: (width - 32 - 12) / 2, backgroundColor: '#ffffff', borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#e2e8f0', marginBottom: 12 }}>
-                                <View style={{ width: '100%', aspectRatio: 16/9 }}>
+                                <View style={{ width: '100%', aspectRatio: 16 / 9 }}>
                                     <Image source={{ uri: n.image_url || 'https://via.placeholder.com/300' }} style={{ width: '100%', height: '100%' }} />
                                 </View>
                                 <View style={{ padding: 12 }}>
@@ -452,7 +418,74 @@ export default function DashboardScreen({ navigation }: any) {
                         )}
                     </View>
                 </View>
-            </Animated.ScrollView>
+            </ScrollView>
+
+            {/* ─── Floating Navigation ─── */}
+            <FloatingNav
+                activeTab="Bairro"
+                onTabPress={(tab) => {
+                    if (tab === 'Bairro') return;
+                    navigation.navigate(tab);
+                }}
+                onPlusPress={() => {
+                    setAddContentModal(true);
+                }}
+            />
+
+            {/* ─── Add Content Modal (Reference Layout) ─── */}
+            <Modal visible={addContentModal} animationType="fade" transparent>
+                <TouchableOpacity
+                    activeOpacity={1}
+                    onPress={() => setAddContentModal(false)}
+                    style={styles.modalOverlay}
+                >
+                    <GlassView intensity={50} style={styles.contentModal}>
+                        <View style={styles.modalDrag} />
+                        <Text style={styles.modalTitleLarge}>Adicionar Conteúdo</Text>
+
+                        <View style={{ gap: 16 }}>
+                            <TouchableOpacity
+                                style={styles.actionItem}
+                                onPress={() => { setAddContentModal(false); navigation.navigate('Classificados'); }}
+                            >
+                                <View style={[styles.actionIconWrap, { backgroundColor: '#E3F2FD' }]}>
+                                    <Newspaper size={24} color="#1E88E5" />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.actionTitle}>Adicionar Classificado</Text>
+                                    <Text style={styles.actionSub}>Venda produtos ou ofereça serviços</Text>
+                                </View>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.actionItem}
+                                onPress={() => { setAddContentModal(false); navigation.navigate('Notícias'); }}
+                            >
+                                <View style={[styles.actionIconWrap, { backgroundColor: '#E3F2FD' }]}>
+                                    <MessageCircle size={24} color="#1E88E5" />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.actionTitle}>Sugerir Notícia</Text>
+                                    <Text style={styles.actionSub}>Compartilhe novidades do bairro</Text>
+                                </View>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.actionItem, { backgroundColor: '#1E88E5' }]}
+                                onPress={() => { setAddContentModal(false); /* navigation.navigate('RegisterStore'); */ }}
+                            >
+                                <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                                    <ShoppingBag size={24} color="white" />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={[styles.actionTitle, { color: 'white' }]}>Cadastrar meu negócio</Text>
+                                    <Text style={[styles.actionSub, { color: 'rgba(255,255,255,0.8)' }]}>Alcance mais clientes no bairro</Text>
+                                </View>
+                            </TouchableOpacity>
+                        </View>
+                    </GlassView>
+                </TouchableOpacity>
+            </Modal>
 
             {/* Neighborhood Selector Modal */}
             <Modal visible={neighborhoodModal} animationType="slide" transparent>
@@ -481,47 +514,106 @@ export default function DashboardScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
+    headerSimple: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingTop: 50,
+        paddingBottom: 15,
+        backgroundColor: '#f8fafc',
+    },
+    headerLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    avatarMini: {
+        width: 36,
+        height: 36,
+        borderRadius: 12,
+        backgroundColor: '#1E88E5',
+        justifyContent: 'center',
+        alignItems: 'center',
+        overflow: 'hidden',
+    },
+    avatarImg: {
+        width: '100%',
+        height: '100%',
+    },
+    avatarLetter: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 14,
+    },
+    locTrigger: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    locText: {
+        fontSize: 18,
+        fontWeight: '900',
+        color: '#0f172a',
+    },
+    cartBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: 'rgba(30, 136, 229, 0.1)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    cartBadge: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        backgroundColor: '#ef4444',
+        borderRadius: 8,
+        minWidth: 16,
+        height: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: '#f8fafc',
+    },
+    cartBadgeText: {
+        color: 'white',
+        fontSize: 8,
+        fontWeight: 'bold',
+    },
+    searchWrap: {
+        paddingHorizontal: 20,
+        paddingBottom: 10,
+        backgroundColor: '#f8fafc',
+    },
+    searchBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'white',
+        borderRadius: 16,
+        paddingHorizontal: 16,
+        height: 52,
+        borderWidth: 1,
+        borderColor: '#e2e8f0',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 2,
+    },
+    searchInputRef: {
+        flex: 1,
+        marginLeft: 10,
+        fontSize: 15,
+        color: '#1e293b',
+        fontWeight: '500',
+    },
     header: {
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100,
         backgroundColor: '#1d4ed8',
         borderBottomLeftRadius: 32, borderBottomRightRadius: 32,
         shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 20, elevation: 8,
-    },
-    headerContent: {
-        paddingHorizontal: 20, paddingTop: 55,
-    },
-    headerTop: {
-        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20,
-    },
-    locationSelector: {
-        flexDirection: 'row', alignItems: 'center', flex: 1,
-    },
-    mapIconCircle: {
-        width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', marginRight: 12,
-    },
-    locationLabel: {
-        fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5,
-    },
-    locationContainer: {
-        flexDirection: 'row', alignItems: 'center',
-    },
-    locationName: {
-        fontSize: 18, fontWeight: '800', color: '#ffffff', marginRight: 4,
-    },
-    userActions: {
-        flexDirection: 'row', alignItems: 'center', gap: 10,
-    },
-    actionButton: {
-        width: 44, height: 44, borderRadius: 22, backgroundColor: '#f8fafc', alignItems: 'center', justifyContent: 'center',
-    },
-    avatarButton: {
-        width: 44, height: 44, borderRadius: 16, backgroundColor: '#1d4ed8', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-    },
-    avatar: {
-        width: '100%', height: '100%',
-    },
-    avatarText: {
-        color: '#ffffff', fontWeight: '800', fontSize: 16,
     },
     searchContainer: {
         backgroundColor: '#f1f5f9', borderRadius: 16, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, height: 52,
@@ -706,6 +798,48 @@ const styles = StyleSheet.create({
     },
     newsTitle: {
         fontSize: 14, fontWeight: '700', color: '#1e293b',
+    },
+    contentModal: {
+        backgroundColor: 'white',
+        borderTopLeftRadius: 32,
+        borderTopRightRadius: 32,
+        padding: 24,
+        paddingBottom: 60,
+        width: '100%',
+        marginTop: 'auto',
+    },
+    modalTitleLarge: {
+        fontSize: 22,
+        fontWeight: '900',
+        color: '#0f172a',
+        marginBottom: 24,
+    },
+    actionItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        borderRadius: 20,
+        backgroundColor: '#f8fafc',
+        borderWidth: 1,
+        borderColor: '#e2e8f0',
+        gap: 16,
+    },
+    actionIconWrap: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    actionTitle: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#0f172a',
+    },
+    actionSub: {
+        fontSize: 12,
+        color: '#717182',
+        marginTop: 2,
     },
     emptyCard: {
         padding: 40, alignItems: 'center', backgroundColor: '#f1f5f9', borderRadius: 20, width: width - 40,
