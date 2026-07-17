@@ -47,13 +47,15 @@ const GlassView: React.FC<GlassViewProps> = ({
 };
 
 const styles = StyleSheet.create({
+    // backdropFilter é uma propriedade CSS exclusiva do web; os tipos do RN não a
+    // conhecem, então o objeto é tipado à parte com `as any`.
     webGlass: {
         backgroundColor: 'rgba(255, 255, 255, 0.7)',
         backdropFilter: 'saturate(180%) blur(20px)',
         WebkitBackdropFilter: 'saturate(180%) blur(20px)',
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.2)',
-    },
+    } as any,
     content: {
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
     },

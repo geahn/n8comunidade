@@ -25,13 +25,13 @@ async function createSuperAdmin() {
 
         const checkUser = await client.query('SELECT * FROM users WHERE email = $1', [email]);
         if (checkUser.rows.length > 0) {
-            console.log('Admin user already exists. Updating role to global_admin...');
-            await client.query('UPDATE users SET role = $1 WHERE email = $2', ['global_admin', email]);
+            console.log('Admin user already exists. Updating role to superadmin...');
+            await client.query('UPDATE users SET role = $1 WHERE email = $2', ['superadmin', email]);
         } else {
             console.log('Creating superadmin user...');
             await client.query(
                 'INSERT INTO users (email, password_hash, full_name, role) VALUES ($1, $2, $3, $4)',
-                [email, passwordHash, fullName, 'global_admin']
+                [email, passwordHash, fullName, 'superadmin']
             );
             console.log('Superadmin created successfully!');
         }

@@ -54,6 +54,7 @@ CREATE TABLE shops (
     address TEXT,
     latitude DECIMAL(9,6),
     longitude DECIMAL(9,6),
+    rating DECIMAL(2,1) DEFAULT 0, -- média de avaliações (0.0 a 5.0)
     status VARCHAR(50) DEFAULT 'pending', -- pending, active, rejected
     business_hours JSONB,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -139,6 +140,19 @@ CREATE TABLE contacts (
     address TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Mini Banners Table (atalhos/destaques no dashboard)
+CREATE TABLE mini_banners (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    neighborhood_id UUID REFERENCES neighborhoods(id) ON DELETE CASCADE,
+    title VARCHAR(255),
+    image_url TEXT NOT NULL,
+    action_type VARCHAR(50), -- screen, link
+    action_target TEXT, -- ex.: 'Shops', 'News', 'https://...'
+    is_active BOOLEAN DEFAULT TRUE,
+    order_index INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Settings/Commissions Table (Superadmin)

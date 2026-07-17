@@ -3,7 +3,8 @@ import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import axios from 'axios';
 
-const FREEIMAGE_API_KEY = '8d20fe02198a847aa98d02a8901485a5';
+// Chave pública do freeimage.host como fallback; pode ser sobrescrita por env.
+const FREEIMAGE_API_KEY = process.env.EXPO_PUBLIC_FREEIMAGE_API_KEY || '8d20fe02198a847aa98d02a8901485a5';
 const FREEIMAGE_URL = 'https://freeimage.host/api/1/upload';
 
 export interface UploadResult {

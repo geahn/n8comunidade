@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const auth = require('../middleware/auth');
+const { requireRole, requireShopOwnership } = require('../middleware/authorize');
+const { ROLES } = require('../config/roles');
 
 // List shops in neighborhood
 router.get('/', auth, async (req, res) => {
@@ -18,6 +20,7 @@ router.get('/', auth, async (req, res) => {
         );
         res.json(result.rows);
     } catch (err) {
+        console.error('shops list error:', err);
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -36,25 +39,20 @@ router.get('/:id', auth, async (req, res) => {
             products: productsResult.rows
         });
     } catch (err) {
+        console.error('shop detail error:', err);
         res.status(500).json({ message: 'Server error' });
     }
 });
 
 // Add a product to the shop menu (Store Owner)
-router.post('/products', auth, async (req, res) => {
-    if (req.user.role !== 'store_owner' && req.user.role !== 'superadmin') {
-        return res.status(403).json({ message: 'Forbidden' });
-    }
-
+router.post('/products', auth, requireRole(ROLES.STORE_OWNER, ROLES.SUPERADMIN), requireShopOwnership('body', 'shop_id'), async (req, res) => {
     const { shop_id, name, description, price, category, image_url, is_available } = req.body;
 
-    try {
-        // Verify ownership
-        if (req.user.role === 'store_owner') {
-            const shopCheck = await db.query('SELECT id FROM shops WHERE id = $1 AND owner_id = $2', [shop_id, req.user.id]);
-            if (shopCheck.rows.length === 0) return res.status(403).json({ message: 'Not authorized for this shop' });
-        }
+    if (!name || price === undefined) {
+        return res.status(400).json({ message: 'name e price são obrigatórios' });
+    }
 
+    try {
         const result = await db.query(
             `INSERT INTO products (shop_id, name, description, price, category, image_url, is_available)
              VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
@@ -69,17 +67,13 @@ router.post('/products', auth, async (req, res) => {
 });
 
 // Update a product
-router.put('/products/:id', auth, async (req, res) => {
-    if (req.user.role !== 'store_owner' && req.user.role !== 'superadmin') {
-        return res.status(403).json({ message: 'Forbidden' });
-    }
-
+router.put('/products/:id', auth, requireRole(ROLES.STORE_OWNER, ROLES.SUPERADMIN), async (req, res) => {
     const { name, description, price, category, image_url, is_available } = req.body;
     const { id } = req.params;
 
     try {
-        // Verify ownership
-        if (req.user.role === 'store_owner') {
+        // Verify ownership (produto -> loja -> dono)
+        if (req.user.role === ROLES.STORE_OWNER) {
             const ownerCheck = await db.query(
                 `SELECT s.owner_id FROM products p JOIN shops s ON p.shop_id = s.id WHERE p.id = $1`,
                 [id]
@@ -111,15 +105,11 @@ router.put('/products/:id', auth, async (req, res) => {
 });
 
 // Delete a product
-router.delete('/products/:id', auth, async (req, res) => {
-    if (req.user.role !== 'store_owner' && req.user.role !== 'superadmin') {
-        return res.status(403).json({ message: 'Forbidden' });
-    }
-
+router.delete('/products/:id', auth, requireRole(ROLES.STORE_OWNER, ROLES.SUPERADMIN), async (req, res) => {
     const { id } = req.params;
 
     try {
-        if (req.user.role === 'store_owner') {
+        if (req.user.role === ROLES.STORE_OWNER) {
             const ownerCheck = await db.query(
                 `SELECT s.owner_id FROM products p JOIN shops s ON p.shop_id = s.id WHERE p.id = $1`,
                 [id]

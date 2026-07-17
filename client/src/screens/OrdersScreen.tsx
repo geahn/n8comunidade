@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { API_URL } from '../api';
 
-import { ArrowLeft, Clock, MapPin, Loader, CheckCircle, Package, ArrowRight, AlertCircle } from 'lucide-react-native';
+import { ArrowLeft, Clock, MapPin, Loader, CheckCircle, Package, ArrowRight, AlertCircle, ShoppingBag } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 

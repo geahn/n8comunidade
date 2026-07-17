@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const auth = require('../middleware/auth');
+const { requireRole } = require('../middleware/authorize');
+const { ADMIN_ROLES } = require('../config/roles');
 
 // List news in neighborhood
 router.get('/', auth, async (req, res) => {
@@ -42,28 +44,26 @@ router.post('/', auth, async (req, res) => {
 });
 
 // Admin approve/reject
-router.patch('/:id/status', auth, async (req, res) => {
-    if (!['neighborhood_admin', 'global_admin'].includes(req.user.role)) {
-        return res.status(403).json({ message: 'Forbidden' });
-    }
+router.patch('/:id/status', auth, requireRole(...ADMIN_ROLES), async (req, res) => {
     const { status } = req.body;
     const { id } = req.params;
+    const validStatuses = ['pending', 'published', 'rejected'];
+    if (!validStatuses.includes(status)) return res.status(400).json({ message: 'Invalid status' });
     try {
         const result = await db.query(
-            'UPDATE news SET status = $1 WHERE id = $2 RETURNING *',
+            'UPDATE news SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
             [status, id]
         );
+        if (result.rows.length === 0) return res.status(404).json({ message: 'News not found' });
         res.json(result.rows[0]);
     } catch (err) {
+        console.error('news status error:', err);
         res.status(500).json({ message: 'Server error' });
     }
 });
 
 // List pending news (admin only)
-router.get('/pending', auth, async (req, res) => {
-    if (!['neighborhood_admin', 'global_admin'].includes(req.user.role)) {
-        return res.status(403).json({ message: 'Forbidden' });
-    }
+router.get('/pending', auth, requireRole(...ADMIN_ROLES), async (req, res) => {
     try {
         const result = await db.query(
             `SELECT n.*, u.full_name as author_name FROM news n 
@@ -74,6 +74,7 @@ router.get('/pending', auth, async (req, res) => {
         );
         res.json(result.rows);
     } catch (err) {
+        console.error('news pending error:', err);
         res.status(500).json({ message: 'Server error' });
     }
 });

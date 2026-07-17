@@ -11,9 +11,10 @@ const { width } = Dimensions.get('window');
 
 const ROLE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
     user: { label: 'Membro Premium', color: '#1d4ed8', bg: '#eff6ff' },
-    shopkeeper: { label: 'Parceiro Lojista', color: '#059669', bg: '#ecfdf5' },
-    neighborhood_admin: { label: 'Líder de Bairro', color: '#7c3aed', bg: '#f5f3ff' },
-    global_admin: { label: 'Super Administrador', color: '#dc2626', bg: '#fff1f2' },
+    store_owner: { label: 'Parceiro Lojista', color: '#059669', bg: '#ecfdf5' },
+    driver: { label: 'Entregador', color: '#d97706', bg: '#fffbeb' },
+    admin: { label: 'Líder de Bairro', color: '#7c3aed', bg: '#f5f3ff' },
+    superadmin: { label: 'Super Administrador', color: '#dc2626', bg: '#fff1f2' },
 };
 
 const MY_ADS = [

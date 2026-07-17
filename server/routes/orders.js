@@ -2,6 +2,15 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const auth = require('../middleware/auth');
+const { ROLES } = require('../config/roles');
+
+// Verifica se o usuário pode gerenciar a loja de um pedido (dono ou admin/superadmin)
+async function canManageShopOrder(user, shopId) {
+    if ([ROLES.ADMIN, ROLES.SUPERADMIN].includes(user.role)) return true;
+    if (user.role !== ROLES.STORE_OWNER) return false;
+    const r = await db.query('SELECT id FROM shops WHERE id = $1 AND owner_id = $2', [shopId, user.id]);
+    return r.rows.length > 0;
+}
 
 // Create a new order (Checkout Flow)
 router.post('/', auth, async (req, res) => {
@@ -11,33 +20,38 @@ router.post('/', auth, async (req, res) => {
         return res.status(400).json({ message: 'Missing required fields' });
     }
 
+    // A taxa de entrega é definida pela loja, não pelo cliente — sanitiza para evitar valores forjados
+    const safeDeliveryFee = Math.max(0, parseFloat(delivery_fee) || 0);
+
     try {
         await db.query('BEGIN'); // Start transaction
 
         // 1. Calculate total amount
-        let total_amount = parseFloat(delivery_fee) || 0;
+        let total_amount = safeDeliveryFee;
 
         // 2. Insert Order
         const orderResult = await db.query(
             `INSERT INTO orders (shop_id, user_id, status, total_amount, delivery_fee, delivery_address, payment_method, notes) 
              VALUES ($1, $2, 'pending', $3, $4, $5, $6, $7) RETURNING *`,
-            [shop_id, req.user.id, total_amount, delivery_fee || 0, delivery_address, payment_method, notes]
+            [shop_id, req.user.id, total_amount, safeDeliveryFee, delivery_address, payment_method, notes]
         );
         const orderId = orderResult.rows[0].id;
 
         // 3. Process items and update total amount
         let itemsTotal = 0;
         for (const item of items) {
-            const productRes = await db.query('SELECT price FROM products WHERE id = $1', [item.product_id]);
+            // Só aceita produtos que pertençam à loja do pedido
+            const productRes = await db.query('SELECT price FROM products WHERE id = $1 AND shop_id = $2 AND is_available = TRUE', [item.product_id, shop_id]);
             if (productRes.rows.length === 0) continue;
 
+            const quantity = Math.max(1, parseInt(item.quantity, 10) || 1);
             const unit_price = productRes.rows[0].price;
-            itemsTotal += (unit_price * item.quantity);
+            itemsTotal += (unit_price * quantity);
 
             await db.query(
-                `INSERT INTO order_items (order_id, product_id, quantity, unit_price, special_instructions) 
+                `INSERT INTO order_items (order_id, product_id, quantity, unit_price, special_instructions)
                  VALUES ($1, $2, $3, $4, $5)`,
-                [orderId, item.product_id, item.quantity, unit_price, item.special_instructions]
+                [orderId, item.product_id, quantity, unit_price, item.special_instructions]
             );
         }
 
@@ -80,8 +94,7 @@ router.get('/user', auth, async (req, res) => {
 
 // Get shop orders (For store owner panel)
 router.get('/shop/:shop_id', auth, async (req, res) => {
-    // Basic verification: user is owner or admin
-    if (req.user.role !== 'store_owner' && req.user.role !== 'superadmin' && req.user.role !== 'admin') {
+    if (!(await canManageShopOrder(req.user, req.params.shop_id))) {
         return res.status(403).json({ message: 'Forbidden' });
     }
 
@@ -112,6 +125,13 @@ router.put('/:id/status', auth, async (req, res) => {
     }
 
     try {
+        // Confirma que o pedido existe e que o usuário gerencia a loja dele
+        const orderRow = await db.query('SELECT shop_id FROM orders WHERE id = $1', [req.params.id]);
+        if (orderRow.rows.length === 0) return res.status(404).json({ message: 'Order not found' });
+        if (!(await canManageShopOrder(req.user, orderRow.rows[0].shop_id))) {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+
         const result = await db.query(
             `UPDATE orders SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *`,
             [status, req.params.id]
@@ -130,7 +150,7 @@ router.put('/:id/status', auth, async (req, res) => {
 
 // Assign Driver (Driver App)
 router.put('/:id/assign-driver', auth, async (req, res) => {
-    if (req.user.role !== 'driver' && req.user.role !== 'superadmin') {
+    if (req.user.role !== ROLES.DRIVER && req.user.role !== ROLES.SUPERADMIN) {
         return res.status(403).json({ message: 'Forbidden: Only drivers can accept orders' });
     }
 
@@ -170,10 +190,14 @@ router.get('/:id', auth, async (req, res) => {
 
         const order = orderRes.rows[0];
 
-        // Ensure user is authorized to view this order
-        if (req.user.role === 'user' && order.user_id !== req.user.id) {
+        // Autorização granular: cliente dono, entregador atribuído, dono da loja, ou admin
+        const isOwnerCustomer = order.user_id === req.user.id;
+        const isAssignedDriver = order.driver_id === req.user.id;
+        const isAdmin = [ROLES.ADMIN, ROLES.SUPERADMIN].includes(req.user.role);
+        const isShopOwner = req.user.role === ROLES.STORE_OWNER && await canManageShopOrder(req.user, order.shop_id);
+        if (!isOwnerCustomer && !isAssignedDriver && !isAdmin && !isShopOwner) {
             return res.status(403).json({ message: 'Forbidden' });
-        } // More granular checks needed here generally
+        }
 
         const itemsRes = await db.query(
             `SELECT oi.*, p.name, p.image_url 
@@ -192,7 +216,7 @@ router.get('/:id', auth, async (req, res) => {
 
 // Get orders for driver
 router.get('/driver/all', auth, async (req, res) => {
-    if (req.user.role !== 'driver' && req.user.role !== 'superadmin') {
+    if (req.user.role !== ROLES.DRIVER && req.user.role !== ROLES.SUPERADMIN) {
         return res.status(403).json({ message: 'Forbidden' });
     }
 

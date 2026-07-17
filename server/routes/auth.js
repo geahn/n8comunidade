@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../db');
 const { body, validationResult } = require('express-validator');
+const { ROLES } = require('../config/roles');
 
 // Signup
 router.post('/signup', [
@@ -48,29 +49,29 @@ router.post('/signup', [
 });
 
 // Login
-router.post('/login', async (req, res) => {
+router.post('/login', [
+    body('email').isEmail(),
+    body('password').notEmpty()
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ message: 'Invalid credentials' });
+
     const { email, password } = req.body;
 
     try {
-        console.log(`Login attempt for email: ${email}`);
         const result = await db.query(
             'SELECT u.id, u.email, u.password_hash, u.full_name, u.role, u.neighborhood_id, n.name as neighborhood_name ' +
             'FROM users u LEFT JOIN neighborhoods n ON u.neighborhood_id = n.id ' +
             'WHERE u.email = $1',
             [email]
         );
-        console.log(`User query result rows: ${result.rows.length}`);
         if (result.rows.length === 0) {
-            console.log('Login failed: User not found');
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
         const user = result.rows[0];
-        console.log(`Comparing password for user: ${user.email}`);
         const isMatch = await bcrypt.compare(password, user.password_hash);
-        console.log(`Password match result: ${isMatch}`);
         if (!isMatch) {
-            console.log('Login failed: Invalid password');
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
@@ -87,7 +88,7 @@ const auth = require('../middleware/auth');
 
 // Impersonate
 router.post('/impersonate', auth, async (req, res) => {
-    if (req.user.role !== 'superadmin') {
+    if (req.user.role !== ROLES.SUPERADMIN) {
         return res.status(403).json({ message: 'Forbidden: Superadmin access required.' });
     }
 

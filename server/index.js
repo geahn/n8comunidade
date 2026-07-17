@@ -1,18 +1,55 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 const db = require('./db');
 
+// Falha rápido se segredos essenciais não estiverem configurados
+if (!process.env.JWT_SECRET) {
+    console.error('FATAL: JWT_SECRET não definido no .env. Abortando.');
+    process.exit(1);
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
+const isProd = process.env.NODE_ENV === 'production';
 
-app.use(cors());
-app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
-    next();
+// CORS restrito por variável de ambiente. Ex.: CORS_ORIGIN=https://app.com,http://localhost:8085
+const allowedOrigins = (process.env.CORS_ORIGIN || '')
+    .split(',')
+    .map(o => o.trim())
+    .filter(Boolean);
+
+app.use(cors({
+    origin: (origin, callback) => {
+        // Permite requests sem origin (apps mobile nativos, curl) e origens na allowlist.
+        // Se CORS_ORIGIN não estiver definido, cai para modo aberto (útil em dev).
+        if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        return callback(new Error('Not allowed by CORS'));
+    }
+}));
+
+// Log de requisições só fora de produção
+if (!isProd) {
+    app.use((req, res, next) => {
+        console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+        next();
+    });
+}
+
+app.use(express.json({ limit: '5mb' }));
+
+// Rate limit específico para autenticação (anti brute-force)
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 min
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Muitas tentativas. Tente novamente em alguns minutos.' },
 });
-app.use(express.json());
 
 // Serve static files from the client/dist directory
 app.use(express.static(path.join(__dirname, '../client/dist')));
@@ -34,7 +71,7 @@ const adminRoutes = require('./routes/admin');
 const ordersRoutes = require('./routes/orders');
 const searchRoutes = require('./routes/search');
 
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/neighborhoods', neighborhoodRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/shops', shopRoutes);

@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import { Home, Store, Heart, Newspaper, ShoppingBag, Plus, LayoutGrid, Users } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
+import { ROLES, PANEL_ROLES } from '../constants/roles';
 import { BlurView } from 'expo-blur';
 
 import DashboardScreen from '../screens/DashboardScreen';
@@ -38,25 +39,25 @@ function MainTabBar() {
 
     const panelScreen = () => {
         const role = user?.role;
-        if (role === 'global_admin') {
+        if (role === ROLES.SUPERADMIN) {
             navigation.navigate('SuperAdmin');
             return;
         }
-        if (role === 'neighborhood_admin') {
+        if (role === ROLES.ADMIN) {
             navigation.navigate('AdminPanel');
             return;
         }
-        if (role === 'shopkeeper' || role === 'store_owner') {
+        if (role === ROLES.STORE_OWNER) {
             navigation.navigate('ShopkeeperPanel');
             return;
         }
-        if (role === 'driver') {
+        if (role === ROLES.DRIVER) {
             navigation.navigate('DriverPanel');
             return;
         }
     };
 
-    const hasPanel = ['global_admin', 'neighborhood_admin', 'shopkeeper', 'store_owner', 'driver'].includes(user?.role);
+    const hasPanel = PANEL_ROLES.includes(user?.role);
 
     return (
         <>
@@ -135,16 +136,16 @@ function MainTabBar() {
                 <TouchableOpacity onPress={panelScreen}
                     style={{
                         position: 'absolute', bottom: 110, right: 16,
-                        backgroundColor: user?.role === 'global_admin' ? '#0f172a' : user?.role === 'neighborhood_admin' ? '#7c3aed' : user?.role === 'driver' ? '#f59e0b' : '#065f46',
+                        backgroundColor: user?.role === ROLES.SUPERADMIN ? '#0f172a' : user?.role === ROLES.ADMIN ? '#7c3aed' : user?.role === ROLES.DRIVER ? '#f59e0b' : '#065f46',
                         borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10,
                         flexDirection: 'row', alignItems: 'center',
                         shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 10, elevation: 10,
                     }}>
                     <Text style={{ fontSize: 14 }}>
-                        {user?.role === 'global_admin' ? '⚙️' : user?.role === 'neighborhood_admin' ? '🛡️' : user?.role === 'driver' ? '🛵' : '🏪'}
+                        {user?.role === ROLES.SUPERADMIN ? '⚙️' : user?.role === ROLES.ADMIN ? '🛡️' : user?.role === ROLES.DRIVER ? '🛵' : '🏪'}
                     </Text>
                     <Text style={{ color: 'white', fontWeight: '700', marginLeft: 6, fontSize: 13 }}>
-                        {user?.role === 'global_admin' ? 'Painel Global' : user?.role === 'neighborhood_admin' ? 'Admin' : user?.role === 'driver' ? 'Entregas' : 'Minha Loja'}
+                        {user?.role === ROLES.SUPERADMIN ? 'Painel Global' : user?.role === ROLES.ADMIN ? 'Admin' : user?.role === ROLES.DRIVER ? 'Entregas' : 'Minha Loja'}
                     </Text>
                 </TouchableOpacity>
             )}

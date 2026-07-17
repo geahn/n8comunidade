@@ -3,7 +3,7 @@ import {
     View, Text, ScrollView, TouchableOpacity, Image,
     Dimensions, Linking, StyleSheet, Alert, Modal, TextInput, Share, Animated, StatusBar
 } from 'react-native';
-import { ArrowLeft, Phone, MessageCircle, MapPin, Star, Share2, Plus, Minus, ShoppingCart, X, Camera, Truck, ChevronRight } from 'lucide-react-native';
+import { ArrowLeft, Phone, MessageCircle, MapPin, Star, Share2, Plus, Minus, ShoppingCart, X, Camera, Truck, ChevronRight, ShoppingBag } from 'lucide-react-native';
 import { pickAndUploadBanner, pickAndUploadLogo } from '../services/imageUpload';
 import { useCart } from '../context/CartContext';
 

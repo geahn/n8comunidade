@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const auth = require('../middleware/auth');
+const { ROLES } = require('../config/roles');
 
 // List ads in neighborhood
 router.get('/', auth, async (req, res) => {
@@ -18,6 +19,7 @@ router.get('/', auth, async (req, res) => {
         );
         res.json(result.rows);
     } catch (err) {
+        console.error('ads route error:', err);
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -26,6 +28,9 @@ router.get('/', auth, async (req, res) => {
 router.post('/', auth, async (req, res) => {
     const { title, description, price, category, images } = req.body;
     const { id: user_id, neighborhood_id } = req.user;
+
+    if (!title) return res.status(400).json({ message: 'title é obrigatório' });
+    if (!neighborhood_id) return res.status(400).json({ message: 'Usuário sem bairro definido' });
 
     try {
         // Check monthly limit (mock logic for now)
@@ -44,6 +49,7 @@ router.post('/', auth, async (req, res) => {
         );
         res.status(201).json(result.rows[0]);
     } catch (err) {
+        console.error('ads route error:', err);
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -57,6 +63,7 @@ router.get('/user', auth, async (req, res) => {
         );
         res.json(result.rows);
     } catch (err) {
+        console.error('ads route error:', err);
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -68,7 +75,7 @@ router.put('/:id', auth, async (req, res) => {
         const adCheck = await db.query('SELECT * FROM ads WHERE id = $1', [req.params.id]);
         if (adCheck.rows.length === 0) return res.status(404).json({ message: 'Ad not found' });
 
-        if (adCheck.rows[0].user_id !== req.user.id && req.user.role !== 'superadmin') {
+        if (adCheck.rows[0].user_id !== req.user.id && req.user.role !== ROLES.SUPERADMIN) {
             return res.status(403).json({ message: 'Forbidden' });
         }
 
@@ -78,6 +85,7 @@ router.put('/:id', auth, async (req, res) => {
         );
         res.json(result.rows[0]);
     } catch (err) {
+        console.error('ads route error:', err);
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -88,13 +96,14 @@ router.delete('/:id', auth, async (req, res) => {
         const adCheck = await db.query('SELECT * FROM ads WHERE id = $1', [req.params.id]);
         if (adCheck.rows.length === 0) return res.status(404).json({ message: 'Ad not found' });
 
-        if (adCheck.rows[0].user_id !== req.user.id && req.user.role !== 'superadmin') {
+        if (adCheck.rows[0].user_id !== req.user.id && req.user.role !== ROLES.SUPERADMIN) {
             return res.status(403).json({ message: 'Forbidden' });
         }
 
         await db.query('DELETE FROM ads WHERE id = $1', [req.params.id]);
         res.json({ message: 'Ad deleted successfully' });
     } catch (err) {
+        console.error('ads route error:', err);
         res.status(500).json({ message: 'Server error' });
     }
 });

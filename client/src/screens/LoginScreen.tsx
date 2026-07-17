@@ -9,8 +9,8 @@ import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react-native';
 const { width, height } = Dimensions.get('window');
 
 export default function LoginScreen() {
-    const [email, setEmail] = useState('contato@geahn.com');
-    const [password, setPassword] = useState('maxadu07');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,7 +23,7 @@ export default function LoginScreen() {
 
         const result = await login(email, password);
         if (!result.success) {
-            setError(result.message);
+            setError(result.message || 'Erro ao fazer login');
             setIsSubmitting(false);
         }
     };

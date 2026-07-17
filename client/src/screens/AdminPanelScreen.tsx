@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, Modal, StyleSheet, Dimensions } from 'react-native';
-import { Package, Users, CheckCircle, XCircle, ChevronRight, X, Bell, LayoutDashboard, Newspaper, ShoppingBag, ArrowLeft } from 'lucide-react-native';
+import { Package, Users, CheckCircle, XCircle, ChevronRight, X, Bell, LayoutDashboard, Newspaper, ShoppingBag, ArrowLeft, Tag } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 
 const { width } = Dimensions.get('window');
@@ -17,14 +17,15 @@ const MOCK_PENDING_SHOPS = [
 const MOCK_MEMBERS = [
     { id: '1', name: 'João Silva', email: 'joao@email.com', role: 'user', joined: '2026-01-01' },
     { id: '2', name: 'Maria Santos', email: 'maria@email.com', role: 'user', joined: '2026-01-15' },
-    { id: '3', name: '(Você) Geahn Daniel', email: 'contato@geahn.com', role: 'neighborhood_admin', joined: '2026-02-01' },
+    { id: '3', name: '(Você) Geahn Daniel', email: 'contato@geahn.com', role: 'admin', joined: '2026-02-01' },
 ];
 
 const ROLE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
     user: { label: 'Membro', color: '#64748b', bg: '#f1f5f9' },
-    shopkeeper: { label: 'Lojista', color: '#059669', bg: '#ecfdf5' },
-    neighborhood_admin: { label: 'Administrador', color: '#7c3aed', bg: '#f5f3ff' },
-    global_admin: { label: 'Superadmin', color: '#dc2626', bg: '#fff1f2' },
+    store_owner: { label: 'Lojista', color: '#059669', bg: '#ecfdf5' },
+    driver: { label: 'Entregador', color: '#d97706', bg: '#fffbeb' },
+    admin: { label: 'Administrador', color: '#7c3aed', bg: '#f5f3ff' },
+    superadmin: { label: 'Superadmin', color: '#dc2626', bg: '#fff1f2' },
 };
 
 export default function AdminPanelScreen({ navigation }: any) {
