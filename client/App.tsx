@@ -5,6 +5,8 @@ import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { CartProvider } from './src/context/CartContext';
 import MainTabs from './src/navigation/MainTabs';
 import LoginScreen from './src/screens/LoginScreen';
+import SignupScreen from './src/screens/SignupScreen';
+import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import { ActivityIndicator, View, Platform } from 'react-native';
 import "./global.css";
 
@@ -27,7 +29,11 @@ function Navigation() {
         {user ? (
           <Stack.Screen name="Main" component={MainTabs} />
         ) : (
-          <Stack.Screen name="Login" component={LoginScreen} />
+          <>
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Signup" component={SignupScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          </>
         )}
       </Stack.Navigator>
     </NavigationContainer>

@@ -30,12 +30,18 @@ export const API_URL = _apiUrl;
 
 // --- Autenticação centralizada via interceptors ---
 
+// Instância central: baseURL configurada, use `api.get('/api/...')`.
+// O axios global também recebe o token para compatibilidade com telas antigas.
+export const api = axios.create({ baseURL: _apiUrl });
+
 // Injeta/remove o token em todas as requisições axios automaticamente.
 export function setAuthToken(token?: string | null) {
     if (token) {
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     } else {
         delete axios.defaults.headers.common['Authorization'];
+        delete api.defaults.headers.common['Authorization'];
     }
 }
 
@@ -45,14 +51,14 @@ export function setUnauthorizedHandler(fn: () => void) {
     onUnauthorized = fn;
 }
 
-axios.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        const status = error?.response?.status;
-        // 401 = sem/expirado; 403 com essa mensagem = token inválido no middleware
-        if (status === 401 || (status === 403 && error?.response?.data?.message === 'Invalid or expired token')) {
-            onUnauthorized();
-        }
-        return Promise.reject(error);
+const handleAuthError = (error: any) => {
+    const status = error?.response?.status;
+    // 401 = sem/expirado; 403 com essa mensagem = token inválido no middleware
+    if (status === 401 || (status === 403 && error?.response?.data?.message === 'Invalid or expired token')) {
+        onUnauthorized();
     }
-);
+    return Promise.reject(error);
+};
+
+axios.interceptors.response.use((r) => r, handleAuthError);
+api.interceptors.response.use((r) => r, handleAuthError);

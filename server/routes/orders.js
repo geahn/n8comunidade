@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../db');
 const auth = require('../middleware/auth');
 const { ROLES } = require('../config/roles');
+const { emitToUser, emitToShop, emitToDrivers } = require('../realtime');
 
 // Verifica se o usuário pode gerenciar a loja de um pedido (dono ou admin/superadmin)
 async function canManageShopOrder(user, shopId) {
@@ -64,7 +65,8 @@ router.post('/', auth, async (req, res) => {
 
         await db.query('COMMIT');
 
-        // TODO: Emit WebSocket event to shop owner here
+        // Notifica a loja em tempo real
+        emitToShop(shop_id, 'order:new', finalOrder.rows[0]);
 
         res.status(201).json(finalOrder.rows[0]);
     } catch (err) {
@@ -139,9 +141,15 @@ router.put('/:id/status', auth, async (req, res) => {
 
         if (result.rows.length === 0) return res.status(404).json({ message: 'Order not found' });
 
-        // TODO: Emit WebSocket event to customer here
+        const updated = result.rows[0];
+        // Notifica o cliente; se ficou pronto, avisa os entregadores do bairro
+        emitToUser(updated.user_id, 'order:status', updated);
+        if (updated.status === 'ready') {
+            const shopRow = await db.query('SELECT neighborhood_id FROM shops WHERE id = $1', [updated.shop_id]);
+            if (shopRow.rows[0]) emitToDrivers(shopRow.rows[0].neighborhood_id, 'order:ready', updated);
+        }
 
-        res.json(result.rows[0]);
+        res.json(updated);
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server error' });
@@ -164,9 +172,12 @@ router.put('/:id/assign-driver', auth, async (req, res) => {
             return res.status(400).json({ message: 'Order not found or not ready for delivery' });
         }
 
-        // TODO: Emit WebSocket event to customer and shop here
+        const assigned = result.rows[0];
+        // Notifica cliente e loja que a entrega começou
+        emitToUser(assigned.user_id, 'order:status', assigned);
+        emitToShop(assigned.shop_id, 'order:status', assigned);
 
-        res.json(result.rows[0]);
+        res.json(assigned);
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server error' });

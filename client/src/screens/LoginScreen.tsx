@@ -8,7 +8,7 @@ import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react-native';
 
 const { width, height } = Dimensions.get('window');
 
-export default function LoginScreen() {
+export default function LoginScreen({ navigation }: any) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -101,13 +101,13 @@ export default function LoginScreen() {
                             )}
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={styles.registerLink}>
+                        <TouchableOpacity onPress={() => navigation.navigate('Signup')} style={styles.registerLink}>
                             <Text style={styles.registerText}>
                                 Novo por aqui? <Text style={styles.registerBold}>Crie sua conta</Text>
                             </Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={styles.forgotBtn}>
+                        <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} style={styles.forgotBtn}>
                             <Text style={styles.forgotText}>Esqueci minha senha</Text>
                         </TouchableOpacity>
                     </View>

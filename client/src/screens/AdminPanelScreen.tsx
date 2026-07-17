@@ -1,24 +1,10 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, Modal, StyleSheet, Dimensions } from 'react-native';
-import { Package, Users, CheckCircle, XCircle, ChevronRight, X, Bell, LayoutDashboard, Newspaper, ShoppingBag, ArrowLeft, Tag } from 'lucide-react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Alert, RefreshControl, StyleSheet, Dimensions } from 'react-native';
+import { Users, CheckCircle, XCircle, ChevronRight, Bell, LayoutDashboard, Newspaper, ShoppingBag, ArrowLeft, Tag } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../api';
 
 const { width } = Dimensions.get('window');
-
-const MOCK_PENDING_NEWS = [
-    { id: '1', title: 'Buraco enorme na Rua das Palmeiras', author: 'João Silva', date: '2026-03-04' },
-    { id: '2', title: 'Evento de integração no próximo domingo', author: 'Maria Santos', date: '2026-03-03' },
-];
-
-const MOCK_PENDING_SHOPS = [
-    { id: '1', name: 'Pet Shop do Bairro', owner: 'Carlos Lima', date: '2026-03-04' },
-];
-
-const MOCK_MEMBERS = [
-    { id: '1', name: 'João Silva', email: 'joao@email.com', role: 'user', joined: '2026-01-01' },
-    { id: '2', name: 'Maria Santos', email: 'maria@email.com', role: 'user', joined: '2026-01-15' },
-    { id: '3', name: '(Você) Geahn Daniel', email: 'contato@geahn.com', role: 'admin', joined: '2026-02-01' },
-];
 
 const ROLE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
     user: { label: 'Membro', color: '#64748b', bg: '#f1f5f9' },
@@ -30,20 +16,83 @@ const ROLE_LABELS: Record<string, { label: string; color: string; bg: string }> 
 
 export default function AdminPanelScreen({ navigation }: any) {
     const { user } = useAuth() as any;
-    const [pendingNews, setPendingNews] = useState(MOCK_PENDING_NEWS);
-    const [pendingShops, setPendingShops] = useState(MOCK_PENDING_SHOPS);
+    const [pendingNews, setPendingNews] = useState<any[]>([]);
+    const [pendingShops, setPendingShops] = useState<any[]>([]);
+    const [members, setMembers] = useState<any[]>([]);
+    const [stats, setStats] = useState<any>(null);
+    const [refreshing, setRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState<'dashboard' | 'news' | 'shops' | 'members'>('dashboard');
 
-    const approve = (type: 'news' | 'shops', id: string) => {
-        if (type === 'news') setPendingNews(p => p.filter(n => n.id !== id));
-        else setPendingShops(p => p.filter(s => s.id !== id));
-        Alert.alert('✅ Aprovado com sucesso!');
+    const load = useCallback(async () => {
+        try {
+            const [newsRes, shopsRes, membersRes, statsRes] = await Promise.all([
+                api.get('/api/news/pending'),
+                api.get('/api/shops/pending'),
+                api.get('/api/admin/users'),
+                api.get('/api/admin/stats'),
+            ]);
+            setPendingNews(newsRes.data);
+            setPendingShops(shopsRes.data);
+            setMembers(membersRes.data);
+            setStats(statsRes.data);
+        } catch (e: any) {
+            console.log('AdminPanel load error:', e.response?.data || e.message);
+        }
+    }, []);
+
+    useEffect(() => { load(); }, [load]);
+
+    const onRefresh = async () => {
+        setRefreshing(true);
+        await load();
+        setRefreshing(false);
     };
 
-    const reject = (type: 'news' | 'shops', id: string) => {
-        if (type === 'news') setPendingNews(p => p.filter(n => n.id !== id));
-        else setPendingShops(p => p.filter(s => s.id !== id));
-        Alert.alert('❌ Solicitação recusada');
+    const approve = async (type: 'news' | 'shops', id: string) => {
+        try {
+            const status = type === 'news' ? 'published' : 'active';
+            await api.patch(`/api/${type}/${id}/status`, { status });
+            Alert.alert('✅ Aprovado com sucesso!');
+            load();
+        } catch (e: any) {
+            Alert.alert('Erro', e.response?.data?.message || 'Falha ao aprovar');
+        }
+    };
+
+    const reject = async (type: 'news' | 'shops', id: string) => {
+        try {
+            await api.patch(`/api/${type}/${id}/status`, { status: 'rejected' });
+            Alert.alert('❌ Solicitação recusada');
+            load();
+        } catch (e: any) {
+            Alert.alert('Erro', e.response?.data?.message || 'Falha ao recusar');
+        }
+    };
+
+    const changeRole = (member: any) => {
+        const options = [
+            { label: 'Membro', role: 'user' },
+            { label: 'Lojista', role: 'store_owner' },
+            { label: 'Entregador', role: 'driver' },
+        ];
+        Alert.alert(
+            member.full_name,
+            'Alterar papel deste membro:',
+            [
+                ...options.map(o => ({
+                    text: o.label,
+                    onPress: async () => {
+                        try {
+                            await api.patch(`/api/admin/users/${member.id}/role`, { role: o.role });
+                            load();
+                        } catch (e: any) {
+                            Alert.alert('Erro', e.response?.data?.message || 'Falha ao alterar papel');
+                        }
+                    },
+                })),
+                { text: 'Cancelar', style: 'cancel' as const },
+            ]
+        );
     };
 
     return (
@@ -56,7 +105,7 @@ export default function AdminPanelScreen({ navigation }: any) {
                     </TouchableOpacity>
                     <View style={styles.headerTitleContainer}>
                         <Text style={styles.headerTitle}>Gestão do Bairro</Text>
-                        <Text style={styles.headerSub}>Bairro Exemplo</Text>
+                        <Text style={styles.headerSub}>{user?.neighborhood_name || 'Seu bairro'}</Text>
                     </View>
                     <TouchableOpacity style={styles.iconBtn}>
                         <Bell size={20} color="white" />
@@ -85,13 +134,17 @@ export default function AdminPanelScreen({ navigation }: any) {
                 </ScrollView>
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            >
                 {activeTab === 'dashboard' && (
                     <View style={styles.dashboardGrid}>
                         <View style={styles.statRow}>
                             <View style={[styles.statCard, { backgroundColor: '#f5f3ff' }]}>
                                 <Users size={24} color="#7c3aed" />
-                                <Text style={[styles.statVal, { color: '#7c3aed' }]}>{MOCK_MEMBERS.length}</Text>
+                                <Text style={[styles.statVal, { color: '#7c3aed' }]}>{stats?.members ?? '—'}</Text>
                                 <Text style={styles.statLabel}>Membros</Text>
                             </View>
                             <View style={[styles.statCard, { backgroundColor: '#fffbeb' }]}>
@@ -108,7 +161,7 @@ export default function AdminPanelScreen({ navigation }: any) {
                             </View>
                             <View style={[styles.statCard, { backgroundColor: '#ecfdf5' }]}>
                                 <Tag size={24} color="#10b981" />
-                                <Text style={[styles.statVal, { color: '#10b981' }]}>12</Text>
+                                <Text style={[styles.statVal, { color: '#10b981' }]}>{stats?.active_ads ?? '—'}</Text>
                                 <Text style={styles.statLabel}>Anúncios Ativos</Text>
                             </View>
                         </View>
@@ -138,7 +191,9 @@ export default function AdminPanelScreen({ navigation }: any) {
                             pendingNews.map(item => (
                                 <View key={item.id} style={styles.approvalCard}>
                                     <Text style={styles.approvalTitle}>{item.title}</Text>
-                                    <Text style={styles.approvalMeta}>Sugestão por {item.author} • {item.date}</Text>
+                                    <Text style={styles.approvalMeta}>
+                                        Sugestão por {item.author_name || 'morador'} • {new Date(item.created_at).toLocaleDateString('pt-BR')}
+                                    </Text>
                                     <View style={styles.actionRow}>
                                         <TouchableOpacity onPress={() => approve('news', item.id)} style={[styles.actionBtn, styles.approveBtn]}>
                                             <CheckCircle size={16} color="white" />
@@ -155,18 +210,53 @@ export default function AdminPanelScreen({ navigation }: any) {
                     </View>
                 )}
 
-                {/* Similar logic for 'shops' and 'members'... */}
+                {activeTab === 'shops' && (
+                    <View style={styles.listContainer}>
+                        {pendingShops.length === 0 ? (
+                            <View style={styles.emptyState}>
+                                <Text style={styles.emptyEmoji}>🏪</Text>
+                                <Text style={styles.emptyTitle}>Nenhuma loja pendente</Text>
+                                <Text style={styles.emptySub}>Novas solicitações de loja aparecerão aqui.</Text>
+                            </View>
+                        ) : (
+                            pendingShops.map(shop => (
+                                <View key={shop.id} style={styles.approvalCard}>
+                                    <Text style={styles.approvalTitle}>{shop.name}</Text>
+                                    <Text style={styles.approvalMeta}>
+                                        Solicitação de {shop.owner_name} • {new Date(shop.created_at).toLocaleDateString('pt-BR')}
+                                    </Text>
+                                    {shop.description ? (
+                                        <Text style={styles.approvalMeta} numberOfLines={2}>{shop.description}</Text>
+                                    ) : null}
+                                    <View style={styles.actionRow}>
+                                        <TouchableOpacity onPress={() => approve('shops', shop.id)} style={[styles.actionBtn, styles.approveBtn]}>
+                                            <CheckCircle size={16} color="white" />
+                                            <Text style={styles.actionBtnText}>Aprovar</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity onPress={() => reject('shops', shop.id)} style={[styles.actionBtn, styles.rejectBtn]}>
+                                            <XCircle size={16} color="#ef4444" />
+                                            <Text style={[styles.actionBtnText, { color: '#ef4444' }]}>Recusar</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            ))
+                        )}
+                    </View>
+                )}
+
                 {activeTab === 'members' && (
                     <View style={styles.listContainer}>
-                        {MOCK_MEMBERS.map(member => {
+                        {members.map(member => {
                             const role = ROLE_LABELS[member.role] || ROLE_LABELS.user;
                             return (
-                                <TouchableOpacity key={member.id} style={styles.memberCard}>
+                                <TouchableOpacity key={member.id} onPress={() => changeRole(member)} style={styles.memberCard}>
                                     <View style={[styles.avatar, { backgroundColor: role.bg }]}>
-                                        <Text style={[styles.avatarText, { color: role.color }]}>{member.name.substring(0, 2).toUpperCase()}</Text>
+                                        <Text style={[styles.avatarText, { color: role.color }]}>
+                                            {(member.full_name || '?').substring(0, 2).toUpperCase()}
+                                        </Text>
                                     </View>
                                     <View style={{ flex: 1, marginLeft: 16 }}>
-                                        <Text style={styles.memberName}>{member.name}</Text>
+                                        <Text style={styles.memberName}>{member.full_name}</Text>
                                         <Text style={styles.memberEmail}>{member.email}</Text>
                                     </View>
                                     <View style={[styles.roleBadge, { backgroundColor: role.bg }]}>
@@ -175,6 +265,13 @@ export default function AdminPanelScreen({ navigation }: any) {
                                 </TouchableOpacity>
                             );
                         })}
+                        {members.length === 0 && (
+                            <View style={styles.emptyState}>
+                                <Text style={styles.emptyEmoji}>👥</Text>
+                                <Text style={styles.emptyTitle}>Sem membros ainda</Text>
+                                <Text style={styles.emptySub}>Os moradores cadastrados aparecerão aqui.</Text>
+                            </View>
+                        )}
                     </View>
                 )}
             </ScrollView>

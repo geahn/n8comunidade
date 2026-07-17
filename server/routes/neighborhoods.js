@@ -1,10 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const auth = require('../middleware/auth');
 
-// Get all active neighborhoods
-router.get('/', auth, async (req, res) => {
+// Get all active neighborhoods — público: necessário para o signup
+router.get('/', async (req, res) => {
     try {
         const result = await db.query(
             'SELECT id, name, slug FROM neighborhoods WHERE status = $1 ORDER BY name ASC',
@@ -12,7 +11,7 @@ router.get('/', auth, async (req, res) => {
         );
         res.json(result.rows);
     } catch (err) {
-        console.error(err);
+        console.error('neighborhoods list error:', err);
         res.status(500).json({ message: 'Server error' });
     }
 });

@@ -25,6 +25,129 @@ router.get('/', auth, async (req, res) => {
     }
 });
 
+// Get my shop (store owner panel) — retorna loja + produtos do dono logado
+router.get('/mine', auth, async (req, res) => {
+    try {
+        const shopResult = await db.query('SELECT * FROM shops WHERE owner_id = $1 ORDER BY created_at ASC LIMIT 1', [req.user.id]);
+        if (shopResult.rows.length === 0) return res.status(404).json({ message: 'Você ainda não tem loja' });
+
+        const shop = shopResult.rows[0];
+        const productsResult = await db.query('SELECT * FROM products WHERE shop_id = $1 ORDER BY created_at DESC', [shop.id]);
+        res.json({ shop, products: productsResult.rows });
+    } catch (err) {
+        console.error('shops/mine error:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// List pending shops (admin approval queue)
+router.get('/pending', auth, requireRole(ROLES.ADMIN, ROLES.SUPERADMIN), async (req, res) => {
+    try {
+        const params = [];
+        let where = `s.status = 'pending'`;
+        // Admin de bairro só vê as lojas do próprio bairro
+        if (req.user.role === ROLES.ADMIN) {
+            params.push(req.user.neighborhood_id);
+            where += ` AND s.neighborhood_id = $1`;
+        }
+        const result = await db.query(
+            `SELECT s.*, u.full_name as owner_name, u.email as owner_email
+             FROM shops s JOIN users u ON s.owner_id = u.id
+             WHERE ${where} ORDER BY s.created_at ASC`,
+            params
+        );
+        res.json(result.rows);
+    } catch (err) {
+        console.error('shops/pending error:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Request a shop (any user) — entra como pending até aprovação do admin
+router.post('/', auth, async (req, res) => {
+    const { name, description, logo_url, cover_url, address, latitude, longitude, business_hours } = req.body;
+    if (!name) return res.status(400).json({ message: 'name é obrigatório' });
+    if (!req.user.neighborhood_id) return res.status(400).json({ message: 'Usuário sem bairro definido' });
+
+    try {
+        const result = await db.query(
+            `INSERT INTO shops (neighborhood_id, owner_id, name, description, logo_url, cover_url, address, latitude, longitude, business_hours, status)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending') RETURNING *`,
+            [req.user.neighborhood_id, req.user.id, name, description, logo_url, cover_url, address, latitude, longitude, business_hours]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error('shops create error:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Approve/reject shop (admin) — na aprovação, promove o dono a store_owner
+router.patch('/:id/status', auth, requireRole(ROLES.ADMIN, ROLES.SUPERADMIN), async (req, res) => {
+    const { status } = req.body;
+    const validStatuses = ['pending', 'active', 'rejected'];
+    if (!validStatuses.includes(status)) return res.status(400).json({ message: 'Invalid status' });
+
+    try {
+        // Admin de bairro só gerencia lojas do próprio bairro
+        const scopeParams = [status, req.params.id];
+        let scopeWhere = 'id = $2';
+        if (req.user.role === ROLES.ADMIN) {
+            scopeParams.push(req.user.neighborhood_id);
+            scopeWhere += ' AND neighborhood_id = $3';
+        }
+
+        const result = await db.query(
+            `UPDATE shops SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE ${scopeWhere} RETURNING *`,
+            scopeParams
+        );
+        if (result.rows.length === 0) return res.status(404).json({ message: 'Shop not found in scope' });
+
+        const shop = result.rows[0];
+        // Loja aprovada => dono vira store_owner (se ainda for user comum)
+        if (status === 'active') {
+            await db.query(
+                `UPDATE users SET role = 'store_owner' WHERE id = $1 AND role = 'user'`,
+                [shop.owner_id]
+            );
+        }
+
+        res.json(shop);
+    } catch (err) {
+        console.error('shops status error:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Update my shop (owner)
+router.put('/:id', auth, requireRole(ROLES.STORE_OWNER, ROLES.SUPERADMIN), async (req, res) => {
+    const { name, description, logo_url, cover_url, address, latitude, longitude, business_hours } = req.body;
+    try {
+        const ownWhere = req.user.role === ROLES.SUPERADMIN ? 'id = $8' : 'id = $8 AND owner_id = $9';
+        const params = [name, description, logo_url, cover_url, address, latitude, longitude, req.params.id];
+        if (req.user.role !== ROLES.SUPERADMIN) params.push(req.user.id);
+
+        const result = await db.query(
+            `UPDATE shops SET
+                name = COALESCE($1, name),
+                description = COALESCE($2, description),
+                logo_url = COALESCE($3, logo_url),
+                cover_url = COALESCE($4, cover_url),
+                address = COALESCE($5, address),
+                latitude = COALESCE($6, latitude),
+                longitude = COALESCE($7, longitude),
+                updated_at = CURRENT_TIMESTAMP
+             WHERE ${ownWhere} RETURNING *`,
+            params
+        );
+        if (result.rows.length === 0) return res.status(404).json({ message: 'Shop not found or not yours' });
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('shops update error:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // Get shop details and products
 router.get('/:id', auth, async (req, res) => {
     const { id } = req.params;

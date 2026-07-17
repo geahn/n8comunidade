@@ -1,9 +1,11 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const http = require('http');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 const db = require('./db');
+const { initRealtime } = require('./realtime');
 
 // Falha rápido se segredos essenciais não estiverem configurados
 if (!process.env.JWT_SECRET) {
@@ -87,6 +89,9 @@ app.get(/^(?!\/api).+/, (req, res) => {
     res.sendFile(path.join(__dirname, '../client/dist/index.html'));
 });
 
-app.listen(PORT, () => {
+const httpServer = http.createServer(app);
+initRealtime(httpServer);
+
+httpServer.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });

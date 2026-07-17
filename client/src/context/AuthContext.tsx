@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect, useCallback } fr
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL, setAuthToken, setUnauthorizedHandler } from '../api';
+import { connectSocket, disconnectSocket } from '../services/socket';
 
 export type UserRole = 'user' | 'store_owner' | 'driver' | 'admin' | 'superadmin';
 
@@ -45,6 +46,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(nextUser);
         setToken(nextToken);
         setAuthToken(nextToken);
+        // Tempo real acompanha a sessão
+        if (nextToken) connectSocket(nextToken);
+        else disconnectSocket();
         try {
             if (nextUser && nextToken) {
                 await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ user: nextUser, token: nextToken }));
@@ -73,6 +77,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                         setUser(parsed.user);
                         setToken(parsed.token);
                         setAuthToken(parsed.token);
+                        connectSocket(parsed.token);
                     }
                 }
             } catch (e) {

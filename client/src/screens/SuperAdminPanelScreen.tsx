@@ -1,40 +1,64 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, Switch, StyleSheet, Dimensions, StatusBar, Image } from 'react-native';
-import { Globe, Users, MapPin, Settings, ChevronRight, CheckCircle, XCircle, LayoutDashboard, Building, Sliders, Bell, ArrowLeft, TrendingUp, ShoppingBag } from 'lucide-react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet, Dimensions, StatusBar, Image, RefreshControl } from 'react-native';
+import { Globe, Users, ChevronRight, CheckCircle, XCircle, LayoutDashboard, Building, Sliders, ArrowLeft, TrendingUp, ShoppingBag, MapPin } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../api';
 
 const { width } = Dimensions.get('window');
 
-const MOCK_NEIGHBORHOODS = [
-    { id: '1', name: 'Bairro Exemplo', slug: 'bairro-exemplo', status: 'active', members: 124, shops: 6 },
-    { id: '2', name: 'Vila Nova', slug: 'vila-nova', status: 'active', members: 87, shops: 4 },
-    { id: '3', name: 'Jardim das Flores', slug: 'jardim-das-flores', status: 'pending', members: 12, shops: 0 },
-    { id: '4', name: 'Centro Histórico', slug: 'centro-historico', status: 'active', members: 250, shops: 18 },
-];
-
-const MOCK_GLOBAL_STATS = [
-    { label: 'Bairros', value: 4, icon: Building, color: '#3b82f6', bg: '#eff6ff' },
-    { label: 'Membros', value: 461, icon: Users, color: '#7c3aed', bg: '#f5f3ff' },
-    { label: 'Lojas', value: 28, icon: ShoppingBag, color: '#10b981', bg: '#ecfdf5' },
-    { label: 'Vendas Brutas', value: 'R$ 12k', icon: TrendingUp, color: '#f59e0b', bg: '#fffbeb' },
-];
-
 export default function SuperAdminPanelScreen({ navigation }: any) {
     const { user, logout } = useAuth() as any;
-    const [neighborhoods, setNeighborhoods] = useState(MOCK_NEIGHBORHOODS);
+    const [neighborhoods, setNeighborhoods] = useState<any[]>([]);
+    const [globalStats, setGlobalStats] = useState<any>(null);
+    const [refreshing, setRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState<'dashboard' | 'neighborhoods' | 'banners' | 'settings'>('dashboard');
     const [commission, setCommission] = useState({ admin: 10, super: 5 });
 
-    const toggleNeighborhoodStatus = (id: string) => {
-        setNeighborhoods(prev => prev.map(n =>
-            n.id === id ? { ...n, status: n.status === 'active' ? 'inactive' : 'active' } : n
-        ));
+    const load = useCallback(async () => {
+        try {
+            const [nbRes, statsRes] = await Promise.all([
+                api.get('/api/admin/neighborhoods'),
+                api.get('/api/admin/global-stats'),
+            ]);
+            setNeighborhoods(nbRes.data);
+            setGlobalStats(statsRes.data);
+        } catch (e: any) {
+            console.log('SuperAdmin load error:', e.response?.data || e.message);
+        }
+    }, []);
+
+    useEffect(() => { load(); }, [load]);
+
+    const onRefresh = async () => {
+        setRefreshing(true);
+        await load();
+        setRefreshing(false);
+    };
+
+    const setNeighborhoodStatus = async (id: string, status: string, successMsg?: string) => {
+        try {
+            await api.patch(`/api/admin/neighborhoods/${id}/status`, { status });
+            if (successMsg) Alert.alert('✅ Sucesso', successMsg);
+            load();
+        } catch (e: any) {
+            Alert.alert('Erro', e.response?.data?.message || 'Falha ao atualizar bairro');
+        }
+    };
+
+    const toggleNeighborhoodStatus = (id: string, current: string) => {
+        setNeighborhoodStatus(id, current === 'active' ? 'rejected' : 'active');
     };
 
     const approveNeighborhood = (id: string) => {
-        setNeighborhoods(prev => prev.map(n => n.id === id ? { ...n, status: 'active' } : n));
-        Alert.alert('✅ Sucesso', 'O bairro foi homologado e já está visível para novos usuários!');
+        setNeighborhoodStatus(id, 'active', 'O bairro foi homologado e já está visível para novos usuários!');
     };
+
+    const STAT_CARDS = [
+        { label: 'Bairros', value: globalStats?.neighborhoods ?? '—', icon: Building, color: '#3b82f6', bg: '#eff6ff' },
+        { label: 'Membros', value: globalStats?.members ?? '—', icon: Users, color: '#7c3aed', bg: '#f5f3ff' },
+        { label: 'Lojas', value: globalStats?.shops ?? '—', icon: ShoppingBag, color: '#10b981', bg: '#ecfdf5' },
+        { label: 'Vendas Brutas', value: globalStats ? `R$ ${Number(globalStats.gross_sales).toFixed(0)}` : '—', icon: TrendingUp, color: '#f59e0b', bg: '#fffbeb' },
+    ];
 
     return (
         <View style={styles.container}>
@@ -77,11 +101,15 @@ export default function SuperAdminPanelScreen({ navigation }: any) {
                 </View>
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            >
                 {activeTab === 'dashboard' && (
                     <View>
                         <View style={styles.statsGrid}>
-                            {MOCK_GLOBAL_STATS.map(stat => {
+                            {STAT_CARDS.map(stat => {
                                 const Icon = stat.icon;
                                 return (
                                     <View key={stat.label} style={styles.statCard}>
@@ -133,13 +161,13 @@ export default function SuperAdminPanelScreen({ navigation }: any) {
                                             <CheckCircle size={16} color="white" />
                                             <Text style={styles.approveBtnText}>Homologar Bairro</Text>
                                         </TouchableOpacity>
-                                        <TouchableOpacity style={styles.rejectBtn}>
+                                        <TouchableOpacity onPress={() => setNeighborhoodStatus(n.id, 'rejected')} style={styles.rejectBtn}>
                                             <XCircle size={16} color="#ef4444" />
                                         </TouchableOpacity>
                                     </View>
                                 ) : (
                                     <TouchableOpacity
-                                        onPress={() => toggleNeighborhoodStatus(n.id)}
+                                        onPress={() => toggleNeighborhoodStatus(n.id, n.status)}
                                         style={[styles.statusBtn, { backgroundColor: n.status === 'active' ? '#fef2f2' : '#ecfdf5' }]}
                                     >
                                         <Text style={[styles.statusBtnText, { color: n.status === 'active' ? '#dc2626' : '#059669' }]}>
